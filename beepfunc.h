@@ -8,10 +8,8 @@ extern boolean apogeeHasFired;
 extern boolean NoBeep;
 extern const int pinSpeaker;
 extern int beepingFrequency;
-extern int pos;
+//extern int pos;
 
-//extern void continuityCheck(int pin);
-//extern void continuityCheckNew();
 extern void beepAltitude(long altitude);
 extern void beginBeepSeq();
 extern void longBeep();

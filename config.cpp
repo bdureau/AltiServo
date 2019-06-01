@@ -47,15 +47,15 @@ void defaultConfig()
   config.noContinuity = 0;
   config.outPut4=3;
   config.outPut4Delay=0;
-  config.servo1OnPos=90;
-  config.servo2OnPos=90;
-  config.servo3OnPos=90;
-  config.servo4OnPos=90;
-  config.servo1OffPos=0;
-  config.servo2OffPos=0;
-  config.servo3OffPos=0;
-  config.servo4OffPos=0;
-  config.cksum=0xBA;  
+  config.servo1OnPos=60;
+  config.servo2OnPos=60;
+  config.servo3OnPos=60;
+  config.servo4OnPos=60;
+  config.servo1OffPos=20;
+  config.servo2OffPos=20;
+  config.servo3OffPos=20;
+  config.servo4OffPos=20;
+  config.cksum=CheckSumConf(config);  
 }
 boolean readAltiConfig() {
 	//set the config to default values so that if any have not been configured we can use the default ones
@@ -65,33 +65,13 @@ boolean readAltiConfig() {
     *((char*)&config + i) = EEPROM.read(CONFIG_START + i);
   }
 
-  if ( config.cksum != 0xBA ) {
+  if ( config.cksum != CheckSumConf(config) ) {
     return false;
   }
-
   return true;
-
 }
 
-/*int getOutPin(int value)
-{
 
-  switch (value)
-  {
-  case 0:
-    pinMain = pyroOut1;
-    break;
-  case 1:
-    pinApogee = pyroOut2;
-    break;
-  case 2:
-    pinOut3 = pyroOut3;
-    break; 
-  default:
-    break;
-  }
-  return 1;
-}*/
 /*
 * write the config received by the console
 *
@@ -162,14 +142,12 @@ void writeAltiConfig( char *p ) {
     case 19:
       config.noContinuity=atoi(str);
       break;
-    
     case 20:
       config.outPut4=atoi(str);
       break;  
     case 21:
       config.outPut4Delay=atol(str);
-      break; 
-      
+      break;    
     case 22:
       config.servo1OnPos=atoi(str);  
       break; 
@@ -200,7 +178,8 @@ void writeAltiConfig( char *p ) {
 
   }
 
-  config.cksum = 0xBA;
+
+  config.cksum = CheckSumConf(config);//0xBA;
 
   /*for( i=0; i<sizeof(config); i++ ) {
     EEPROM.write(CONFIG_START+i, *((char*)&config + i));
@@ -274,7 +253,7 @@ void printAltiConfig()
   SerialCom.print(F(","));
   SerialCom.print(config.endRecordAltitude);
   SerialCom.print(F(","));
-  SerialCom.print(config.recordTemperature);
+  SerialCom.print(config.recordTemperature); //unused but keep it for compatibility with the other alti
   SerialCom.print(F(","));
   SerialCom.print(config.superSonicDelay);
   SerialCom.print(F(","));
@@ -282,10 +261,9 @@ void printAltiConfig()
   SerialCom.print(F(","));
   SerialCom.print(config.altimeterResolution);
   SerialCom.print(F(","));
-  SerialCom.print(config.eepromSize);
+  SerialCom.print(config.eepromSize); //unused but keep it for compatibility with the other alti
   SerialCom.print(F(","));
-  SerialCom.print(config.noContinuity);
-
+  SerialCom.print(config.noContinuity); //unused but keep it for compatibility with the other alti
   SerialCom.print(F(","));
   //output4
   SerialCom.print(config.outPut4);
@@ -338,3 +316,16 @@ bool CheckValideBaudRate(long baudRate)
 	  valid = true;
 	return valid;
 }
+
+
+ 
+unsigned int CheckSumConf( ConfigStruct cnf)
+ {
+     int i;
+     unsigned int chk=0;
+    
+     for (i=0; i < (sizeof(cnf)-2); i++) 
+     chk += *((char*)&cnf + i);
+    
+     return chk;
+ }
