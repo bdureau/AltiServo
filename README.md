@@ -9,7 +9,7 @@ It is possible to use a terminal to send some sort of AT command to the altimete
 You will need a USB cable or a bluetooth module
 
 # Talking to the altimeter using graphical user interfaces
-- an Android application that can run on any Android device that is running at least Android 4.2 
+- an Android application that can run on any Android device that is running at least Android 4.2. The application is called [BearConsole](https://github.com/bdureau/BearConsole2)
 
 # Communicating with the altimeter board
 The AltiServo board can communicate using the serial connector. On the serial connector you can plug several devices:
