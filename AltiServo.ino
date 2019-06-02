@@ -289,24 +289,6 @@ void setup()
   lastAltitude = 0;//initialAltitude;
   liftoffAltitude = 20;
 
-  //check which pyro are enabled
-  /* if (out1Enable) {
-     pos++;
-     //continuityPins[pos] = pinChannel1Continuity;
-    }
-    if (out2Enable) {
-     pos++;
-     //continuityPins[pos] = pinChannel2Continuity;
-    }
-    if (out3Enable) {
-     pos++;
-     //continuityPins[pos] = pinChannel3Continuity;
-    }
-    if (out4Enable)  {
-     pos++;
-     //continuityPins[pos] = pinChannel4Continuity;
-    }*/
-
 }
 void assignPyroOutputs()
 {
@@ -553,7 +535,6 @@ void recordAltitude()
   if (out1Enable == false) Output1Fired = true;
   if (out2Enable == false) Output2Fired = true;
   if (out3Enable == false) Output3Fired = true;
-
   if (out4Enable == false) Output4Fired = true;
 
 
@@ -620,7 +601,6 @@ void recordAltitude()
           if (currentTime >= config.outPut1Delay)
           {
             //fire output pyroOut1
-            //digitalWrite(pyroOut1, HIGH);
             fireOutput(pyroOut1, true);
             timerEvent1_startime = currentTime;
             Event1Fired = true;
@@ -634,7 +614,6 @@ void recordAltitude()
           if ((currentTime - config.outPut1Delay) >= 1000 && Output1Fired == false)
           {
             //switch off output pyroOut1
-            //digitalWrite(pyroOut1, LOW);
             Output1Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 1st out"));
@@ -646,7 +625,6 @@ void recordAltitude()
           if (currentTime >= config.outPut2Delay)
           {
             //fire output pyroOut2
-            //digitalWrite(pyroOut2, HIGH);
             fireOutput(pyroOut2, true);
             Event2Fired = true;
 #ifdef SERIAL_DEBUG
@@ -659,8 +637,7 @@ void recordAltitude()
           if ((currentTime - config.outPut2Delay) >= 1000 && Output2Fired == false)
           {
             //switch off output pyroOut2
-            //digitalWrite(pyroOut2, LOW);
-
+            fireOutput(pyroOut2, false);
             Output2Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 2nd out"));
@@ -673,7 +650,6 @@ void recordAltitude()
           {
             //fire output pyroOut3
             fireOutput(pyroOut3, true);
-            //digitalWrite(pyroOut3, HIGH);
             Event3Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Fired 3rd out"));
@@ -685,7 +661,6 @@ void recordAltitude()
           if ((currentTime - config.outPut3Delay) >= 1000 && Output3Fired == false)
           {
             //switch off output pyroOut3
-            //digitalWrite(pyroOut3, LOW);
             fireOutput(pyroOut3, false);
             Output3Fired = true;
 #ifdef SERIAL_DEBUG
@@ -699,7 +674,6 @@ void recordAltitude()
           if (currentTime >= config.outPut4Delay)
           {
             //fire output pyroOut4
-            //digitalWrite(pyroOut4, HIGH);
             fireOutput(pyroOut4, true);
             Event4Fired = true;
 #ifdef SERIAL_DEBUG
@@ -712,7 +686,8 @@ void recordAltitude()
           if ((currentTime - config.outPut4Delay) >= 1000 && Output4Fired == false)
           {
             //switch off output pyroOut4
-            digitalWrite(pyroOut4, LOW);
+            //digitalWrite(pyroOut4, LOW);
+            fireOutput(pyroOut4, false);
             Output4Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 4th out"));
@@ -749,7 +724,6 @@ void recordAltitude()
           if ((millis() - apogeeStartTime) >= apogeeDelay)
           {
             //fire drogue
-            //digitalWrite(pinApogee, HIGH);
             fireOutput(pinApogee, true);
             setEventState(pinApogee, true);
 #ifdef SERIAL_DEBUG
@@ -765,6 +739,7 @@ void recordAltitude()
         {
           // Deploy main chute  X meters or feet  before landing...
           //digitalWrite(pinApogee, LOW);
+          fireOutput(pinApogee, false);
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("Apogee firing complete"));
 #endif
@@ -775,6 +750,7 @@ void recordAltitude()
           mainStartTime = millis();
           //digitalWrite(pinMain, HIGH);
           //mainHasFired=true;
+          
           mainAltitude = currAltitude;
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("main altitude"));
