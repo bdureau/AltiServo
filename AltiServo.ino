@@ -472,7 +472,6 @@ void SendTelemetry(long sampleTime) {
     if (out2Enable) {
       //check continuity
       SerialCom.print(0);
-
     }
     else {
       SerialCom.print(-1);
@@ -494,6 +493,13 @@ void SendTelemetry(long sampleTime) {
     else {
       SerialCom.print(-1);
     }
+    SerialCom.print(F(","));
+    SerialCom.print(-1);
+     // temperature
+    SerialCom.print(F(","));
+    float temperature;
+    temperature = bmp.readTemperature();
+    SerialCom.print((int)temperature );
     SerialCom.println(F(";"));
   }
 }
