@@ -116,6 +116,9 @@ Servo Servo1;   // First Servo off the chassis
 Servo Servo2;   // Second Servo off the chassis
 Servo Servo3;
 Servo Servo4;
+
+long lastTelemetry =0;
+
 void assignPyroOutputs();
 void MainMenu();
 
@@ -231,10 +234,10 @@ void setup()
   digitalWrite(pinSpeaker, LOW);
 
   //enable or disable continuity check
-  if (config.noContinuity == 1)
+  /*if (config.noContinuity == 1)
     noContinuity = true;
   else
-    noContinuity = false;
+    noContinuity = false;*/
 
   //initialisation give the version of the altimeter
   //One long beep per major number and One short beep per minor revision
@@ -424,8 +427,9 @@ void setEventState(int pyroOut, boolean state)
 
 }
 
-void SendTelemetry(long sampleTime) {
-  if (telemetryEnable) {
+void SendTelemetry(long sampleTime, int freq) {
+  if (telemetryEnable && (millis() - lastTelemetry)> freq) {
+    lastTelemetry =millis();
     int val = 0;
     //check liftoff
     int li = 0;
@@ -493,6 +497,7 @@ void SendTelemetry(long sampleTime) {
     else {
       SerialCom.print(-1);
     }
+    //no bat voltage
     SerialCom.print(F(","));
     SerialCom.print(-1);
      // temperature
@@ -571,11 +576,11 @@ void recordAltitude()
     //read current altitude
     currAltitude = (ReadAltitude() - initialAltitude);
     if (liftOff)
-      SendTelemetry(millis() - initialTime);
+      SendTelemetry(millis() - initialTime, 200);
     if (( currAltitude > liftoffAltitude) == true && liftOff == false && mainHasFired == false)
     {
       liftOff = true;
-      SendTelemetry(0);
+      SendTelemetry(0,200);
       // save the time
       initialTime = millis();
       if (config.superSonicYesNo == 1)
@@ -599,7 +604,7 @@ void recordAltitude()
         currAltitude = (ReadAltitude() - initialAltitude);
 
         currentTime = millis() - initialTime;
-        SendTelemetry(currentTime);
+        SendTelemetry(currentTime, 200);
         diffTime = currentTime - prevTime;
         prevTime = currentTime;
         if (timerEvent1_enable && Event1Fired == false)
@@ -620,6 +625,7 @@ void recordAltitude()
           if ((currentTime - config.outPut1Delay) >= 1000 && Output1Fired == false)
           {
             //switch off output pyroOut1
+            fireOutput(pyroOut1, false);
             Output1Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 1st out"));
@@ -692,7 +698,6 @@ void recordAltitude()
           if ((currentTime - config.outPut4Delay) >= 1000 && Output4Fired == false)
           {
             //switch off output pyroOut4
-            //digitalWrite(pyroOut4, LOW);
             fireOutput(pyroOut4, false);
             Output4Fired = true;
 #ifdef SERIAL_DEBUG
@@ -737,14 +742,13 @@ void recordAltitude()
 #endif
             apogeeReadyToFire = false;
             apogeeHasFired = true;
-            SendTelemetry(millis() - initialTime);
+            SendTelemetry(millis() - initialTime, 200);
           }
         }
 
         if ((currAltitude  < mainDeployAltitude) && apogeeHasFired == true && mainHasFired == false)
         {
           // Deploy main chute  X meters or feet  before landing...
-          //digitalWrite(pinApogee, LOW);
           fireOutput(pinApogee, false);
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("Apogee firing complete"));
@@ -781,7 +785,7 @@ void recordAltitude()
             mainReadyToFire = false;
             //setEventState(pinMain, true);
             mainHasFired = true;
-            SendTelemetry(millis() - initialTime);
+            SendTelemetry(millis() - initialTime,200);
           }
         }
 
@@ -791,6 +795,7 @@ void recordAltitude()
           if ((millis() - (mainStartTime + mainDelay)) >= 1000 && MainFiredComplete == false)
           {
             //digitalWrite(pinMain, LOW);
+            fireOutput(pinMain, false);
             setEventState(pinMain, true);
             //liftOff =false;
 #ifdef SERIAL_DEBUG
@@ -803,7 +808,7 @@ void recordAltitude()
         if (MainFiredComplete && currAltitude < 10)
         {
           liftOff = false;
-          SendTelemetry(millis() - initialTime);
+          SendTelemetry(millis() - initialTime, 500);
         }
         if (Output1Fired == true && Output2Fired == true && Output3Fired == true && Output4Fired == true)
         {
@@ -811,7 +816,7 @@ void recordAltitude()
           SerialCom.println(F("all event have fired"));
 #endif
           exit = true;
-          SendTelemetry(millis() - initialTime);
+          SendTelemetry(millis() - initialTime, 500);
         }
 
       }
@@ -849,10 +854,10 @@ void MainMenu()
     {
       currAltitude = (ReadAltitude() - initialAltitude);
       if (liftOff)
-        SendTelemetry(millis() - initialTime);
+        SendTelemetry(millis() - initialTime, 200);
       if (( currAltitude > liftoffAltitude) != true)
       {
-        SendTelemetry(0);
+        SendTelemetry(0, 500);
       }
       else
       {
@@ -926,7 +931,7 @@ void interpretCommandBuffer(char *commandbuffer) {
   //toggle continuity on and off
   if (commandbuffer[0] == 'c')
   {
-    if (noContinuity == false)
+   /* if (noContinuity == false)
     {
       noContinuity = true;
       SerialCom.println(F("Continuity off \n"));
@@ -935,7 +940,8 @@ void interpretCommandBuffer(char *commandbuffer) {
     {
       noContinuity = false;
       SerialCom.println(F("Continuity on \n"));
-    }
+    }*/
+    SerialCom.println(F("Not implemented \n"));
   }
 
   //get altimeter config
