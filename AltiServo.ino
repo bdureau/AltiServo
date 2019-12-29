@@ -194,7 +194,8 @@ void setup()
   //and change it to 57600, 115200 etc..
   //Serial.begin(BAUD_RATE);
   SerialCom.begin(config.connectionSpeed);
-
+  //software pull up so that all bluetooth modules work!!! took me a good day to figure it out
+  pinMode(PD0, INPUT_PULLUP);
   //Presure Sensor Initialisation
 #ifdef BMP085_180
   // Note that BMP180 is compatible with the BMP085 library
