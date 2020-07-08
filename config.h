@@ -14,17 +14,7 @@
 
 
 /////////////// config changes start here ///////////
-// here choose one of the board that you want to use
-// note that you will need to compile using the Arduino Uno or SMT32 board
-// if you have the original ALTIMULTI board using an ATMega328 define ALTIMULTI
-//#define ALTIMULTI
 
-// if you have a modified ALTIMULTI board using an ATMega328 using different Arduino pins for the
-// pyro output so that they do not fire following a reset of the board then define ALTIMULTIV2
-//#define ALTIMULTIV2
-
-// if you have the STM32 shield then define ALTIMULTISTM32
-//#define ALTIMULTISTM32
 
 // choose the pressure sensor that you are using
 // for most board the pressure sensor is either BMP085 or BMP180 
@@ -43,7 +33,7 @@
 //////////// do not change anything after unless you know what you are doing /////////////////////
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 0
+#define MINOR_VERSION 1
 #define CONFIG_START 32
 
 
@@ -100,10 +90,12 @@ struct ConfigStruct {
   int superSonicDelay;   //nbr of ms during when we ignore any altitude measurements
   long connectionSpeed;   //altimeter connection baudrate
   int altimeterResolution; // BMP sensor resolution
-  int eepromSize;
+  int eepromSize; //Size of the eeprom used
   int noContinuity;
   int outPut4;
   int outPut4Delay;
+  int liftOffAltitude; //Lift Altitude in meters
+  int batteryType; // 0= Unknown, 1= "2S (7.4 Volts)", 2 = "9 Volts",3 = "3S (11.1 Volts)
   int servo1OnPos;
   int servo2OnPos;
   int servo3OnPos;
@@ -112,6 +104,7 @@ struct ConfigStruct {
   int servo2OffPos;
   int servo3OffPos;
   int servo4OffPos;
+  
   int cksum;  
 };
 extern ConfigStruct config;

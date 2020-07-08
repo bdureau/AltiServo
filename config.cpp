@@ -55,6 +55,8 @@ void defaultConfig()
   config.servo2OffPos=20;
   config.servo3OffPos=20;
   config.servo4OffPos=20;
+  config.liftOffAltitude=10;
+  config.batteryType=0; // 0= Unknown, 1= "2S (7.4 Volts)", 2 = "9 Volts",3 = "3S (11.1 Volts)
   config.cksum=CheckSumConf(config);  
 }
 boolean readAltiConfig() {
@@ -147,32 +149,38 @@ void writeAltiConfig( char *p ) {
       break;  
     case 21:
       config.outPut4Delay=atol(str);
-      break;    
+      break;   
     case 22:
-      config.servo1OnPos=atoi(str);  
+      config.liftOffAltitude=atoi(str);       
       break; 
     case 23:
-      config.servo2OnPos=atoi(str);
-      break;     	
+      config.batteryType=atoi(str);       
+      break;    
     case 24:
-      config.servo3OnPos=atoi(str); 
+      config.servo1OnPos=atoi(str);  
       break; 
     case 25:
-      config.servo4OnPos=atoi(str);  
-      break;      
-      
+      config.servo2OnPos=atoi(str);
+      break;     	
     case 26:
-      config.servo1OffPos=atoi(str);  
+      config.servo3OnPos=atoi(str); 
       break; 
     case 27:
-      config.servo2OffPos=atoi(str);  
-      break;     
+      config.servo4OnPos=atoi(str);  
+      break;      
     case 28:
-      config.servo3OffPos=atoi(str); 
+      config.servo1OffPos=atoi(str);  
       break; 
     case 29:
+      config.servo2OffPos=atoi(str);  
+      break;     
+    case 30:
+      config.servo3OffPos=atoi(str); 
+      break; 
+    case 31:
       config.servo4OffPos=atoi(str);       
       break;
+     
     }
     i++;
 
@@ -271,6 +279,12 @@ void printAltiConfig()
    //output4 delay
   SerialCom.print(config.outPut4Delay);
   SerialCom.print(F(","));
+  //Lift off altitude
+  SerialCom.print(config.liftOffAltitude);
+  SerialCom.print(F(","));
+  //Battery type
+  SerialCom.print(config.batteryType);
+  SerialCom.print(F(","));
   //servo1OnPos
   SerialCom.print(config.servo1OnPos);
   SerialCom.print(F(","));
@@ -283,7 +297,6 @@ void printAltiConfig()
   //servo4OnPos
   SerialCom.print(config.servo4OnPos);
   SerialCom.print(F(","));
-
   //servo1OffPos
   SerialCom.print(config.servo1OffPos);
   SerialCom.print(F(","));
@@ -295,7 +308,8 @@ void printAltiConfig()
   SerialCom.print(F(","));
   //servo4OffPos
   SerialCom.print(config.servo4OffPos);
- 
+  
+  
   SerialCom.print(F(";\n"));
 }
 bool CheckValideBaudRate(long baudRate)

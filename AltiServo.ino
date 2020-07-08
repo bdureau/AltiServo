@@ -1,6 +1,6 @@
 /*
-  Rocket Servo altimeter ver 1.0
-  Copyright Boris du Reau 2012-2019
+  Rocket Servo altimeter ver 1.1
+  Copyright Boris du Reau 2012-2020
 
   The following is board for triggering servo's on event during a rocket flight.
 
@@ -18,6 +18,8 @@
 
   Major changes on version 1.0
   Altimeter initial version
+  Major changes on version 1.1
+  code clean up
 
 
 */
@@ -291,7 +293,7 @@ void setup()
   }
   initialAltitude = (sum / 10.0);
   lastAltitude = 0;//initialAltitude;
-  liftoffAltitude = 20;
+  liftoffAltitude = config.liftOffAltitude;//20;
 
 }
 void assignPyroOutputs()
