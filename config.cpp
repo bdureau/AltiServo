@@ -46,6 +46,8 @@ void defaultConfig()
   config.eepromSize=512;
   config.noContinuity = 0;
   config.outPut4=3;
+  config.liftOffAltitude=10;
+  config.batteryType=0; // 0= Unknown, 1= "2S (7.4 Volts)", 2 = "9 Volts",3 = "3S (11.1 Volts)
   config.outPut4Delay=0;
   config.servo1OnPos=60;
   config.servo2OnPos=60;
@@ -55,8 +57,6 @@ void defaultConfig()
   config.servo2OffPos=20;
   config.servo3OffPos=20;
   config.servo4OffPos=20;
-  config.liftOffAltitude=10;
-  config.batteryType=0; // 0= Unknown, 1= "2S (7.4 Volts)", 2 = "9 Volts",3 = "3S (11.1 Volts)
   config.cksum=CheckSumConf(config);  
 }
 boolean readAltiConfig() {
@@ -78,7 +78,7 @@ boolean readAltiConfig() {
 * write the config received by the console
 *
 */
-void writeAltiConfig( char *p ) {
+bool writeAltiConfig( char *p ) {
 
   char *str;
   int i=0;
@@ -193,6 +193,7 @@ void writeAltiConfig( char *p ) {
     EEPROM.write(CONFIG_START+i, *((char*)&config + i));
   }*/
   writeConfigStruc();
+    return true;
 }
 //////////////////////////////////////////////////////////////////////////////////////
 void writeConfigStruc()

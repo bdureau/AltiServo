@@ -112,7 +112,7 @@ extern ConfigStruct config;
 extern void defaultConfig();
 extern boolean readAltiConfig();
 extern int getOutPin(int );
-extern void writeAltiConfig( char * );
+extern bool writeAltiConfig( char * );
 extern void printAltiConfig();
 extern void writeConfigStruc();
 extern bool CheckValideBaudRate(long);

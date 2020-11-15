@@ -120,6 +120,9 @@ Servo Servo3;
 Servo Servo4;
 
 long lastTelemetry =0;
+// main loop
+boolean mainLoopEnable =true;
+
 
 void assignPyroOutputs();
 void MainMenu();
@@ -840,7 +843,7 @@ void MainMenu()
 
   char commandbuffer[200];
 
-  SerialCom.println(F("Rocket flight data logger. A maximum of 25 flight can be logged \n"));
+ /* SerialCom.println(F("Rocket flight data logger. A maximum of 25 flight can be logged \n"));
   SerialCom.println(F("Commands are: \n"));
   SerialCom.println(F("w = record flight \n"));
   SerialCom.println(F("r (followed by the flight number) = read flight data\n"));
@@ -848,7 +851,7 @@ void MainMenu()
   SerialCom.println(F("e  = erase all flight data \n"));
   SerialCom.println(F("c  = toggle continuity on/off \n"));
   SerialCom.println(F("b  = print alti config \n"));
-  SerialCom.println(F("Enter Command and terminate it by a ; >>\n"));
+  SerialCom.println(F("Enter Command and terminate it by a ; >>\n"));*/
   i = 0;
   readVal = ' ';
   while ( readVal != ';')
@@ -927,26 +930,69 @@ void MainMenu()
 }
 
 
+/*
+
+   This interprets menu commands. This can be used in the commend line or
+   this is used by the Android console
+
+   Commands are as folow:
+   e  erase all saved flights
+   r  followed by a number which is the flight number.
+      This will retrieve all data for the specified flight
+   w  Start or stop recording
+   n  Return the number of recorded flights in the EEprom
+   l  list all flights
+   c  toggle continuity on and off
+   a  get all flight data
+   b  get altimeter config
+   s  write altimeter config
+   d  reset alti config
+   h  hello. Does not do much
+   k  folowed by a number turn on or off the selected output
+   y  followed by a number turn telemetry on/off. if number is 1 then
+      telemetry in on else turn it off
+   m  followed by a number turn main loop on/off. if number is 1 then
+      main loop in on else turn it off
+*/
 void interpretCommandBuffer(char *commandbuffer) {
   SerialCom.println((char*)commandbuffer);
 
-
-  //toggle continuity on and off
-  if (commandbuffer[0] == 'c')
+  //this will erase all flight
+  if (commandbuffer[0] == 'e')
   {
-   /* if (noContinuity == false)
-    {
-      noContinuity = true;
-      SerialCom.println(F("Continuity off \n"));
-    }
-    else
-    {
-      noContinuity = false;
-      SerialCom.println(F("Continuity on \n"));
-    }*/
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //this will read one flight
+  else if (commandbuffer[0] == 'r')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //start or stop recording
+  else if (commandbuffer[0] == 'w')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //Number of flight
+  else if (commandbuffer[0] == 'n')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //list all flights
+  else if (commandbuffer[0] == 'l')
+  {
     SerialCom.println(F("Not implemented \n"));
   }
 
+  //toggle continuity on and off
+  else if (commandbuffer[0] == 'c')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //get all flight data
+  else if (commandbuffer[0] == 'a')
+  {
+     SerialCom.println(F("Not implemented \n"));
+  }
   //get altimeter config
   else if (commandbuffer[0] == 'b')
   {
@@ -959,7 +1005,10 @@ void interpretCommandBuffer(char *commandbuffer) {
   //write altimeter config
   else if (commandbuffer[0] == 's')
   {
-    writeAltiConfig(commandbuffer);
+    if (writeAltiConfig(commandbuffer))
+      SerialCom.print(F("$OK;\n"));
+    else
+      SerialCom.print(F("$KO;\n"));
   }
   //reset alti config
   else if (commandbuffer[0] == 'd')
@@ -967,34 +1016,17 @@ void interpretCommandBuffer(char *commandbuffer) {
     defaultConfig();
     writeConfigStruc();
   }
-  //FastReading
-  else if (commandbuffer[0] == 'f')
-  {
-    FastReading = true;
-    SerialCom.print(F("$OK;\n"));
-  }
-  //FastReading off
-  else if (commandbuffer[0] == 'g')
-  {
-    FastReading = false;
-    SerialCom.print(F("$OK;\n"));
-  }
-  //hello
+    //hello
   else if (commandbuffer[0] == 'h')
   {
     //FastReading = false;
     SerialCom.print(F("$OK;\n"));
   }
-  else if (commandbuffer[0] == 't')
+  //FastReading
+  else if (commandbuffer[0] == 'f')
   {
-    //reset config
-    defaultConfig();
-    writeConfigStruc();
-    SerialCom.print(F("config reseted\n"));
-  }
-  else if (commandbuffer[0] == 'i')
-  {
-    //exit continuity mode
+    FastReading = true;
+    SerialCom.print(F("$OK;\n"));
   }
   //turn on or off the selected output
   else if (commandbuffer[0] == 'k')
@@ -1038,6 +1070,43 @@ void interpretCommandBuffer(char *commandbuffer) {
       telemetryEnable = false;
     }   
     SerialCom.print(F("$OK;\n"));
+  }
+  //mainloop on/off
+  else if (commandbuffer[0] == 'm')
+  {
+    if (commandbuffer[1] == '1') {
+#ifdef SERIAL_DEBUG
+      SerialCom.print(F("main Loop enabled\n"));
+#endif
+      //mainLoopEnable = true;
+      FastReading = true;
+    }
+    else {
+#ifdef SERIAL_DEBUG
+      SerialCom.print(F("main loop disabled\n"));
+#endif
+      //mainLoopEnable = false;
+      FastReading = false;
+    }
+    SerialCom.print(F("$OK;\n"));
+  }
+   //FastReading off
+  else if (commandbuffer[0] == 'g')
+  {
+    FastReading = false;
+    SerialCom.print(F("$OK;\n"));
+  }
+
+  else if (commandbuffer[0] == 't')
+  {
+    //reset config
+    defaultConfig();
+    writeConfigStruc();
+    SerialCom.print(F("config reseted\n"));
+  }
+  else if (commandbuffer[0] == 'i')
+  {
+    //exit continuity mode
   }
   else if (commandbuffer[0] == ' ')
   {
