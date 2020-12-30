@@ -117,4 +117,5 @@ extern void printAltiConfig();
 extern void writeConfigStruc();
 extern bool CheckValideBaudRate(long);
 extern unsigned int CheckSumConf( ConfigStruct );
+extern unsigned int msgChk( char * buffer, long length );
 #endif

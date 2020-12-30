@@ -20,7 +20,7 @@
   Altimeter initial version
   Major changes on version 1.1
   code clean up
-
+  adding checksum
 
 */
 #include <Servo.h>
@@ -119,9 +119,9 @@ Servo Servo2;   // Second Servo off the chassis
 Servo Servo3;
 Servo Servo4;
 
-long lastTelemetry =0;
+long lastTelemetry = 0;
 // main loop
-boolean mainLoopEnable =true;
+boolean mainLoopEnable = true;
 
 
 void assignPyroOutputs();
@@ -242,7 +242,7 @@ void setup()
   //enable or disable continuity check
   /*if (config.noContinuity == 1)
     noContinuity = true;
-  else
+    else
     noContinuity = false;*/
 
   //initialisation give the version of the altimeter
@@ -251,7 +251,7 @@ void setup()
   beepAltiVersion(MAJOR_VERSION, MINOR_VERSION);
 
   //number of measures to do to detect Apogee
-    measures = config.nbrOfMeasuresForApogee;
+  measures = config.nbrOfMeasuresForApogee;
 
   if (!softConfigValid)
   {
@@ -434,8 +434,10 @@ void setEventState(int pyroOut, boolean state)
 }
 
 void SendTelemetry(long sampleTime, int freq) {
-  if (telemetryEnable && (millis() - lastTelemetry)> freq) {
-    lastTelemetry =millis();
+  char altiTelem[200] = "";
+  char temp[10] = "";
+  if (telemetryEnable && (millis() - lastTelemetry) > freq) {
+    lastTelemetry = millis();
     int val = 0;
     //check liftoff
     int li = 0;
@@ -454,64 +456,66 @@ void SendTelemetry(long sampleTime, int freq) {
     int landed = 0;
     if ( mainHasFired && currAltitude < 10)
       landed = 1;
-    SerialCom.print(F("$telemetry,"));
-    SerialCom.print(currAltitude);
-    SerialCom.print(F(","));
-    SerialCom.print(li);
-    SerialCom.print(F(","));
-    SerialCom.print(ap);
-    SerialCom.print(F(","));
-    SerialCom.print(apogeeAltitude);
-    SerialCom.print(F(","));
-    SerialCom.print(ma);
-    SerialCom.print(F(","));
-    SerialCom.print(mainAltitude);
-    SerialCom.print(F(","));
-    SerialCom.print(landed);
-    SerialCom.print(F(","));
-    SerialCom.print(sampleTime);
-    SerialCom.print(F(","));
-    if (out1Enable) {
-      //check continuity
-      SerialCom.print(0);
-    }
-    else {
-      SerialCom.print(-1);
-    }
-    SerialCom.print(F(","));
-    if (out2Enable) {
-      //check continuity
-      SerialCom.print(0);
-    }
-    else {
-      SerialCom.print(-1);
-    }
-    SerialCom.print(F(","));
-    if (out3Enable) {
-      //check continuity
-      SerialCom.print(0);
-    }
-    else {
-      SerialCom.print(-1);
-    }
+    //SerialCom.print(F("$telemetry,"));
+    //SerialCom.print(currAltitude);
+    //SerialCom.print(F(","));
+    strcat(altiTelem, "telemetry," );
+    sprintf(temp, "%i,", currAltitude);
+    strcat(altiTelem, temp);
+    //SerialCom.print(li);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", li);
+    strcat(altiTelem, temp);
+    //SerialCom.print(ap);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", ap);
+    strcat(altiTelem, temp);
+    //SerialCom.print(apogeeAltitude);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", apogeeAltitude);
+    strcat(altiTelem, temp);
+    //SerialCom.print(ma);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", ma);
+    strcat(altiTelem, temp);
+    //SerialCom.print(mainAltitude);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", mainAltitude);
+    strcat(altiTelem, temp);
+    //SerialCom.print(landed);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", landed);
+    strcat(altiTelem, temp);
+    //SerialCom.print(sampleTime);
+    //SerialCom.print(F(","));
+    sprintf(temp, "%i,", sampleTime);
+    strcat(altiTelem, temp);
+    //No continuity
+    strcat(altiTelem, "-1,");
 
-    SerialCom.print(F(","));
-    if (out4Enable) {
-      //check continuity
-      SerialCom.print(0);
-    }
-    else {
-      SerialCom.print(-1);
-    }
+    strcat(altiTelem, "-1,");
+
+    strcat(altiTelem, "-1,");
+
+    strcat(altiTelem, "-1,");
+
     //no bat voltage
-    SerialCom.print(F(","));
-    SerialCom.print(-1);
-     // temperature
-    SerialCom.print(F(","));
+    strcat(altiTelem, "-1,");
+    // temperature
+    //SerialCom.print(F(","));
     float temperature;
     temperature = bmp.readTemperature();
-    SerialCom.print((int)temperature );
-    SerialCom.println(F(";"));
+    //SerialCom.print((int)temperature );
+    sprintf(temp, "%i,", (int)temperature );
+    strcat(altiTelem, temp);
+    //SerialCom.println(F(";"));
+    unsigned int chk;
+    chk = msgChk(altiTelem, sizeof(altiTelem));
+    sprintf(temp, "%i", chk);
+    strcat(altiTelem, temp);
+    strcat(altiTelem, ";\n");
+    SerialCom.print("$");
+    SerialCom.print(altiTelem);
   }
 }
 //================================================================
@@ -586,7 +590,7 @@ void recordAltitude()
     if (( currAltitude > liftoffAltitude) == true && liftOff == false && mainHasFired == false)
     {
       liftOff = true;
-      SendTelemetry(0,200);
+      SendTelemetry(0, 200);
       // save the time
       initialTime = millis();
       if (config.superSonicYesNo == 1)
@@ -766,7 +770,7 @@ void recordAltitude()
           mainStartTime = millis();
           //digitalWrite(pinMain, HIGH);
           //mainHasFired=true;
-          
+
           mainAltitude = currAltitude;
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("main altitude"));
@@ -791,7 +795,7 @@ void recordAltitude()
             mainReadyToFire = false;
             //setEventState(pinMain, true);
             mainHasFired = true;
-            SendTelemetry(millis() - initialTime,200);
+            SendTelemetry(millis() - initialTime, 200);
           }
         }
 
@@ -843,15 +847,15 @@ void MainMenu()
 
   char commandbuffer[200];
 
- /* SerialCom.println(F("Rocket flight data logger. A maximum of 25 flight can be logged \n"));
-  SerialCom.println(F("Commands are: \n"));
-  SerialCom.println(F("w = record flight \n"));
-  SerialCom.println(F("r (followed by the flight number) = read flight data\n"));
-  SerialCom.println(F("l  = print flight list \n"));
-  SerialCom.println(F("e  = erase all flight data \n"));
-  SerialCom.println(F("c  = toggle continuity on/off \n"));
-  SerialCom.println(F("b  = print alti config \n"));
-  SerialCom.println(F("Enter Command and terminate it by a ; >>\n"));*/
+  /* SerialCom.println(F("Rocket flight data logger. A maximum of 25 flight can be logged \n"));
+    SerialCom.println(F("Commands are: \n"));
+    SerialCom.println(F("w = record flight \n"));
+    SerialCom.println(F("r (followed by the flight number) = read flight data\n"));
+    SerialCom.println(F("l  = print flight list \n"));
+    SerialCom.println(F("e  = erase all flight data \n"));
+    SerialCom.println(F("c  = toggle continuity on/off \n"));
+    SerialCom.println(F("b  = print alti config \n"));
+    SerialCom.println(F("Enter Command and terminate it by a ; >>\n"));*/
   i = 0;
   readVal = ' ';
   while ( readVal != ';')
@@ -991,7 +995,7 @@ void interpretCommandBuffer(char *commandbuffer) {
   //get all flight data
   else if (commandbuffer[0] == 'a')
   {
-     SerialCom.println(F("Not implemented \n"));
+    SerialCom.println(F("Not implemented \n"));
   }
   //get altimeter config
   else if (commandbuffer[0] == 'b')
@@ -1016,7 +1020,7 @@ void interpretCommandBuffer(char *commandbuffer) {
     defaultConfig();
     writeConfigStruc();
   }
-    //hello
+  //hello
   else if (commandbuffer[0] == 'h')
   {
     //FastReading = false;
@@ -1061,14 +1065,14 @@ void interpretCommandBuffer(char *commandbuffer) {
   //telemetry on/off
   else if (commandbuffer[0] == 'y')
   {
-    if(commandbuffer[1]=='1') {
+    if (commandbuffer[1] == '1') {
       SerialCom.print(F("Telemetry enabled\n"));
       telemetryEnable = true;
-    }   
-    else{
+    }
+    else {
       SerialCom.print(F("Telemetry disabled\n"));
       telemetryEnable = false;
-    }   
+    }
     SerialCom.print(F("$OK;\n"));
   }
   //mainloop on/off
@@ -1079,18 +1083,18 @@ void interpretCommandBuffer(char *commandbuffer) {
       SerialCom.print(F("main Loop enabled\n"));
 #endif
       //mainLoopEnable = true;
-      FastReading = true;
+      FastReading = false;
     }
     else {
 #ifdef SERIAL_DEBUG
       SerialCom.print(F("main loop disabled\n"));
 #endif
       //mainLoopEnable = false;
-      FastReading = false;
+      FastReading = true;
     }
     SerialCom.print(F("$OK;\n"));
   }
-   //FastReading off
+  //FastReading off
   else if (commandbuffer[0] == 'g')
   {
     FastReading = false;
