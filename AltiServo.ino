@@ -456,38 +456,29 @@ void SendTelemetry(long sampleTime, int freq) {
     int landed = 0;
     if ( mainHasFired && currAltitude < 10)
       landed = 1;
-    //SerialCom.print(F("$telemetry,"));
-    //SerialCom.print(currAltitude);
-    //SerialCom.print(F(","));
+
     strcat(altiTelem, "telemetry," );
     sprintf(temp, "%i,", currAltitude);
     strcat(altiTelem, temp);
-    //SerialCom.print(li);
-    //SerialCom.print(F(","));
+   
     sprintf(temp, "%i,", li);
     strcat(altiTelem, temp);
-    //SerialCom.print(ap);
-    //SerialCom.print(F(","));
+  
     sprintf(temp, "%i,", ap);
     strcat(altiTelem, temp);
-    //SerialCom.print(apogeeAltitude);
-    //SerialCom.print(F(","));
+  
     sprintf(temp, "%i,", apogeeAltitude);
     strcat(altiTelem, temp);
-    //SerialCom.print(ma);
-    //SerialCom.print(F(","));
+   
     sprintf(temp, "%i,", ma);
     strcat(altiTelem, temp);
-    //SerialCom.print(mainAltitude);
-    //SerialCom.print(F(","));
+   
     sprintf(temp, "%i,", mainAltitude);
     strcat(altiTelem, temp);
-    //SerialCom.print(landed);
-    //SerialCom.print(F(","));
+   
     sprintf(temp, "%i,", landed);
     strcat(altiTelem, temp);
-    //SerialCom.print(sampleTime);
-    //SerialCom.print(F(","));
+   
     sprintf(temp, "%i,", sampleTime);
     strcat(altiTelem, temp);
     //No continuity
@@ -502,13 +493,12 @@ void SendTelemetry(long sampleTime, int freq) {
     //no bat voltage
     strcat(altiTelem, "-1,");
     // temperature
-    //SerialCom.print(F(","));
     float temperature;
     temperature = bmp.readTemperature();
-    //SerialCom.print((int)temperature );
+    
     sprintf(temp, "%i,", (int)temperature );
     strcat(altiTelem, temp);
-    //SerialCom.println(F(";"));
+    
     unsigned int chk;
     chk = msgChk(altiTelem, sizeof(altiTelem));
     sprintf(temp, "%i", chk);
@@ -780,8 +770,6 @@ void recordAltitude()
         }
         if (mainReadyToFire)
         {
-          //Serial.println("conf delay main" + config.outPut1Delay );
-          //Serial.println("conf delay" + config.outPut2Delay );
           SerialCom.println(mainStartTime);
 
           if ((millis() - mainStartTime) >= mainDelay)
@@ -790,10 +778,8 @@ void recordAltitude()
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("firing main"));
 #endif
-            //digitalWrite(pinMain, HIGH);
             fireOutput(pinMain, true);
             mainReadyToFire = false;
-            //setEventState(pinMain, true);
             mainHasFired = true;
             SendTelemetry(millis() - initialTime, 200);
           }
@@ -804,10 +790,8 @@ void recordAltitude()
 
           if ((millis() - (mainStartTime + mainDelay)) >= 1000 && MainFiredComplete == false)
           {
-            //digitalWrite(pinMain, LOW);
             fireOutput(pinMain, false);
             setEventState(pinMain, true);
-            //liftOff =false;
 #ifdef SERIAL_DEBUG
             SerialCom.println("Main fired");
 #endif
@@ -1119,7 +1103,6 @@ void interpretCommandBuffer(char *commandbuffer) {
 
   else
   {
-    // Serial.println(F("Unknown command" ));
     SerialCom.print(F("$UNKNOWN;"));
     SerialCom.println(commandbuffer[0]);
 

@@ -18,8 +18,6 @@ VirtualDelay delay1, delay2, delay3;
 int lastPin = -1;
 int currentPinPos = 0;
 int currentPin = -1;
-//int pos = -1;
-
 
 void beepAltitude(long altitude)
 {
