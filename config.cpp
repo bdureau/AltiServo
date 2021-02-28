@@ -2,11 +2,11 @@
 
 //pyro out 1
 const int pyroOut1 = 9;
-int pinApogee = 9;
+int pinApogee[] = {-1, -1, -1, -1};
 
 //pyro out 2
 const int pyroOut2= 10;
-int pinMain = 10;
+int pinMain[] = {-1, -1, -1, -1};
 
 //pyro out 3
 const int pyroOut3= 5;
@@ -57,6 +57,7 @@ void defaultConfig()
   config.servo2OffPos=20;
   config.servo3OffPos=20;
   config.servo4OffPos=20;
+  config.servoStayOn=1;
   config.cksum=CheckSumConf(config);  
 }
 boolean readAltiConfig() {
@@ -214,6 +215,10 @@ bool writeAltiConfig( char *p ) {
       strcat(msg, str);    
       break;
     case 32:
+      config.servoStayOn=atoi(str); 
+      strcat(msg, str);    
+      break;
+    case 33:
     //our checksum
         strChk= atoi(str);
         break;
@@ -223,7 +228,7 @@ bool writeAltiConfig( char *p ) {
   }
 
 //we have a partial config
-  if (i<31)
+  if (i<32)
     return false;
   if(msgChk(msg, sizeof(msg)) != strChk)
     return false;  
@@ -351,7 +356,9 @@ char altiConfig[150] = "";
   strcat(altiConfig, temp);
   sprintf(temp, "%i,", config.servo4OffPos);
   strcat(altiConfig, temp);
-
+  //leave the servo on after it has been triggered
+sprintf(temp, "%i,", config.servoStayOn);
+  strcat(altiConfig, temp);
    unsigned int chk = 0;
   chk = msgChk( altiConfig, sizeof(altiConfig) );
   sprintf(temp, "%i;\n", chk);

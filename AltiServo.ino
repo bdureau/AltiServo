@@ -1,6 +1,6 @@
 /*
-  Rocket Servo altimeter ver 1.1
-  Copyright Boris du Reau 2012-2020
+  Rocket Servo altimeter ver 1.2
+  Copyright Boris du Reau 2012-2021
 
   The following is board for triggering servo's on event during a rocket flight.
 
@@ -21,7 +21,8 @@
   Major changes on version 1.1
   code clean up
   adding checksum
-
+  Major changes on version 1.2
+  Allow multiple drogue or main
 */
 #include <Servo.h>
 //altimeter configuration lib
@@ -301,8 +302,12 @@ void setup()
 }
 void assignPyroOutputs()
 {
-  pinMain = -1;
-  pinApogee = -1;
+  //pinMain = {-1, -1, -1, -1};
+  //pinApogee = {-1, -1, -1, -1};
+  for (int a =0 ; a<4 ; a++ ) {
+    pinMain[a] =-1;
+    pinApogee[a] =-1;
+  }
   pinOut1 = -1;
   pinOut2 = -1;
   pinOut3 = -1;
@@ -313,12 +318,12 @@ void assignPyroOutputs()
     case 0:
       mainEvent_Enable = true;
       mainDelay = config.outPut1Delay;
-      pinMain = pyroOut1;
+      pinMain[0] = pyroOut1;
       break;
     case 1:
       apogeeEvent_Enable = true;
       apogeeDelay = config.outPut1Delay;
-      pinApogee = pyroOut1;
+      pinApogee[0] = pyroOut1;
       break;
     case 2:
       timerEvent1_enable = true;
@@ -334,12 +339,12 @@ void assignPyroOutputs()
   {
     case 0:
       mainEvent_Enable = true;
-      pinMain = pyroOut2;
+      pinMain[1] = pyroOut2;
       mainDelay = config.outPut2Delay;
       break;
     case 1:
       apogeeEvent_Enable = true;
-      pinApogee = pyroOut2;
+      pinApogee[1] = pyroOut2;
       apogeeDelay = config.outPut2Delay;
       break;
     case 2:
@@ -356,12 +361,12 @@ void assignPyroOutputs()
     case 0:
       mainEvent_Enable = true;
       mainDelay = config.outPut3Delay;
-      pinMain = pyroOut3;
+      pinMain[2] = pyroOut3;
       break;
     case 1:
       apogeeEvent_Enable = true;
       apogeeDelay = config.outPut3Delay;
-      pinApogee = pyroOut3;
+      pinApogee[2] = pyroOut3;
       break;
     case 2:
       timerEvent3_enable = true;
@@ -379,12 +384,12 @@ void assignPyroOutputs()
     case 0:
       mainEvent_Enable = true;
       mainDelay = config.outPut4Delay;
-      pinMain = pyroOut4;
+      pinMain[3] = pyroOut4;
       break;
     case 1:
       apogeeEvent_Enable = true;
       apogeeDelay = config.outPut4Delay;
-      pinApogee = pyroOut4;
+      pinApogee[3] = pyroOut4;
       break;
     case 2:
       timerEvent4_enable = true;
@@ -395,6 +400,11 @@ void assignPyroOutputs()
       out4Enable = false;
       break;
   }
+
+ /* for (int a =0 ; a<4 ; a++ ) {
+    SerialCom.println(pinMain[a]);
+    SerialCom.println(pinApogee[a]);
+  }*/
 }
 
 void setEventState(int pyroOut, boolean state)
@@ -460,25 +470,25 @@ void SendTelemetry(long sampleTime, int freq) {
     strcat(altiTelem, "telemetry," );
     sprintf(temp, "%i,", currAltitude);
     strcat(altiTelem, temp);
-   
+
     sprintf(temp, "%i,", li);
     strcat(altiTelem, temp);
-  
+
     sprintf(temp, "%i,", ap);
     strcat(altiTelem, temp);
-  
+
     sprintf(temp, "%i,", apogeeAltitude);
     strcat(altiTelem, temp);
-   
+
     sprintf(temp, "%i,", ma);
     strcat(altiTelem, temp);
-   
+
     sprintf(temp, "%i,", mainAltitude);
     strcat(altiTelem, temp);
-   
+
     sprintf(temp, "%i,", landed);
     strcat(altiTelem, temp);
-   
+
     sprintf(temp, "%i,", sampleTime);
     strcat(altiTelem, temp);
     //No continuity
@@ -495,10 +505,10 @@ void SendTelemetry(long sampleTime, int freq) {
     // temperature
     float temperature;
     temperature = bmp.readTemperature();
-    
+
     sprintf(temp, "%i,", (int)temperature );
     strcat(altiTelem, temp);
-    
+
     unsigned int chk;
     chk = msgChk(altiTelem, sizeof(altiTelem));
     sprintf(temp, "%i", chk);
@@ -625,7 +635,8 @@ void recordAltitude()
           if ((currentTime - config.outPut1Delay) >= 1000 && Output1Fired == false)
           {
             //switch off output pyroOut1
-            fireOutput(pyroOut1, false);
+            if (config.servoStayOn == 0)
+              fireOutput(pyroOut1, false);
             Output1Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 1st out"));
@@ -649,7 +660,8 @@ void recordAltitude()
           if ((currentTime - config.outPut2Delay) >= 1000 && Output2Fired == false)
           {
             //switch off output pyroOut2
-            fireOutput(pyroOut2, false);
+            if (config.servoStayOn == 0)
+              fireOutput(pyroOut2, false);
             Output2Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 2nd out"));
@@ -672,8 +684,9 @@ void recordAltitude()
         {
           if ((currentTime - config.outPut3Delay) >= 1000 && Output3Fired == false)
           {
-            //switch off output pyroOut3
-            fireOutput(pyroOut3, false);
+            //switch off output
+            if (config.servoStayOn == 0)
+              fireOutput(pyroOut3, false);
             Output3Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 3rd out"));
@@ -698,7 +711,8 @@ void recordAltitude()
           if ((currentTime - config.outPut4Delay) >= 1000 && Output4Fired == false)
           {
             //switch off output pyroOut4
-            fireOutput(pyroOut4, false);
+            if (config.servoStayOn == 0)
+              fireOutput(pyroOut4, false);
             Output4Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Finished Firing 4th out"));
@@ -735,8 +749,10 @@ void recordAltitude()
           if ((millis() - apogeeStartTime) >= apogeeDelay)
           {
             //fire drogue
-            fireOutput(pinApogee, true);
-            setEventState(pinApogee, true);
+            for (int ap =0; ap < 4 ; ap++) {
+              fireOutput(pinApogee[ap], true);
+              setEventState(pinApogee[ap], true);
+            }
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Apogee has fired"));
 #endif
@@ -749,7 +765,9 @@ void recordAltitude()
         if ((currAltitude  < mainDeployAltitude) && apogeeHasFired == true && mainHasFired == false)
         {
           // Deploy main chute  X meters or feet  before landing...
-          fireOutput(pinApogee, false);
+           for (int ap =0; ap < 4 ; ap++) {
+              fireOutput(pinApogee[ap], false);
+           }
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("Apogee firing complete"));
 #endif
@@ -778,7 +796,9 @@ void recordAltitude()
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("firing main"));
 #endif
-            fireOutput(pinMain, true);
+            for (int ma; ma < 4; ma++ ) {
+              fireOutput(pinMain[ma], true);
+            }
             mainReadyToFire = false;
             mainHasFired = true;
             SendTelemetry(millis() - initialTime, 200);
@@ -790,7 +810,9 @@ void recordAltitude()
 
           if ((millis() - (mainStartTime + mainDelay)) >= 1000 && MainFiredComplete == false)
           {
-            fireOutput(pinMain, false);
+            for (int ma; ma < 4; ma++ ) {
+              fireOutput(pinMain[ma], false);
+            }
             setEventState(pinMain, true);
 #ifdef SERIAL_DEBUG
             SerialCom.println("Main fired");
@@ -993,8 +1015,11 @@ void interpretCommandBuffer(char *commandbuffer) {
   //write altimeter config
   else if (commandbuffer[0] == 's')
   {
-    if (writeAltiConfig(commandbuffer))
+    if (writeAltiConfig(commandbuffer)){
+      readAltiConfig();
+      assignPyroOutputs();
       SerialCom.print(F("$OK;\n"));
+    }  
     else
       SerialCom.print(F("$KO;\n"));
   }
@@ -1003,6 +1028,8 @@ void interpretCommandBuffer(char *commandbuffer) {
   {
     defaultConfig();
     writeConfigStruc();
+    readAltiConfig();
+    assignPyroOutputs();
   }
   //hello
   else if (commandbuffer[0] == 'h')
