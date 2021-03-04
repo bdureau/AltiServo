@@ -33,7 +33,7 @@
 //////////// do not change anything after unless you know what you are doing /////////////////////
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 1
+#define MINOR_VERSION 2
 #define CONFIG_START 32
 
 
@@ -54,14 +54,17 @@
 
 //pyro out 1
 extern const int pyroOut1;
-extern int pinApogee;
+//pin apogee
+extern int pinApogee[];
 //pyro out 2
 extern const int pyroOut2;
-extern int pinMain;
+//pinMain
+extern int pinMain[];
 //pyro out 3
 extern const int pyroOut3;
 extern int pinOut3;
-
+//pinLanding
+extern int pinLanding[];
 //pyro out 4
 extern const int pyroOut4;
 extern int pinOut4;
@@ -104,6 +107,7 @@ struct ConfigStruct {
   int servo2OffPos;
   int servo3OffPos;
   int servo4OffPos;
+  int servoStayOn;
   
   int cksum;  
 };

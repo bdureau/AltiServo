@@ -5,7 +5,7 @@
 
 boolean noContinuity = false;
 //Our drogue has been ejected i.e: apogee has been detected
-boolean apogeeHasFired = false;
+//boolean apogeeHasFired = false;
 
 boolean NoBeep = false;
 
