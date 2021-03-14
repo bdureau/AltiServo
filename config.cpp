@@ -13,6 +13,8 @@ const int pyroOut3= 5;
 int pinOut3 = 5;
 //pinLanding
 int pinLanding[]= {-1, -1, -1, -1};
+//PinLiftOff
+int pinLiftOff[]= {-1, -1, -1, -1};
 //pyro out 4
 const int pyroOut4=6; 
 int pinOut4 = 6;

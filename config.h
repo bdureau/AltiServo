@@ -65,6 +65,8 @@ extern const int pyroOut3;
 extern int pinOut3;
 //pinLanding
 extern int pinLanding[];
+//pinLiftOff
+extern int pinLiftOff[];
 //pyro out 4
 extern const int pyroOut4;
 extern int pinOut4;

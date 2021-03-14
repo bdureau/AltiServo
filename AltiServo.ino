@@ -23,6 +23,7 @@
   adding checksum
   Major changes on version 1.2
   Allow multiple drogue or main
+  added landing and lift off events
 */
 #include <Servo.h>
 //altimeter configuration lib
@@ -70,8 +71,10 @@ unsigned long initialTime;
 
 boolean FastReading = false;
 boolean mainHasFired = false;
+//Our drogue has been ejected i.e: apogee has been detected
 boolean apogeeHasFired = false;
 boolean landingHasFired = false;
+boolean liftOffHasFired = false;
 
 //nbr of measures to do so that we are sure that apogee has been reached
 unsigned long measures = 5;
@@ -98,6 +101,7 @@ boolean timerEvent4_enable = false;
 boolean apogeeEvent_Enable = false;
 boolean mainEvent_Enable = false;
 boolean landingEvent_Enable = false;
+boolean liftOffEvent_Enable = false;
 // enable/disable output
 boolean out1Enable = true;
 boolean out2Enable = true;
@@ -107,6 +111,7 @@ boolean out4Enable = true;
 int apogeeDelay = 0;
 int mainDelay = 0;
 int landingDelay = 0;
+int liftOffDelay = 0;
 int out1Delay = 0;
 int out2Delay = 0;
 int out3Delay = 0;
@@ -244,12 +249,6 @@ void setup()
 
   digitalWrite(pinSpeaker, LOW);
 
-  //enable or disable continuity check
-  /*if (config.noContinuity == 1)
-    noContinuity = true;
-    else
-    noContinuity = false;*/
-
   //initialisation give the version of the altimeter
   //One long beep per major number and One short beep per minor revision
   //For example version 1.2 would be one long beep and 2 short beep
@@ -304,14 +303,20 @@ void setup()
   liftoffAltitude = config.liftOffAltitude;//20;
 
 }
+/*
+   assignPyroOutputs()
+   Assign the pyro outputs different fonctionalities such as
+   apogge, main, timer, landing or liftoff events
+
+*/
 void assignPyroOutputs()
 {
-  //pinMain = {-1, -1, -1, -1};
-  //pinApogee = {-1, -1, -1, -1};
-  for (int a =0 ; a<4 ; a++ ) {
-    pinMain[a] =-1;
-    pinApogee[a] =-1;
-    pinLanding[a] =-1;
+
+  for (int a = 0 ; a < 4 ; a++ ) {
+    pinMain[a] = -1;
+    pinApogee[a] = -1;
+    pinLanding[a] = -1;
+    pinLiftOff[a] = -1;
   }
   pinOut1 = -1;
   pinOut2 = -1;
@@ -340,6 +345,11 @@ void assignPyroOutputs()
       landingDelay = config.outPut1Delay;
       pinLanding[0] = pyroOut1;
       break;
+    case 5:
+      liftOffEvent_Enable = true;
+      liftOffDelay = config.outPut1Delay;
+      pinLiftOff[0] = pyroOut1;
+      break;
     default:
       out1Enable = false;
       break;
@@ -366,7 +376,12 @@ void assignPyroOutputs()
       landingEvent_Enable = true;
       landingDelay = config.outPut2Delay;
       pinLanding[1] = pyroOut2;
-      break;  
+      break;
+    case 5:
+      liftOffEvent_Enable = true;
+      liftOffDelay = config.outPut2Delay;
+      pinLiftOff[1] = pyroOut2;
+      break;
     default:
       out2Enable = false;
       break;
@@ -392,7 +407,12 @@ void assignPyroOutputs()
       landingEvent_Enable = true;
       landingDelay = config.outPut3Delay;
       pinLanding[2] = pyroOut3;
-      break;   
+      break;
+    case 5:
+      liftOffEvent_Enable = true;
+      liftOffDelay = config.outPut3Delay;
+      pinLiftOff[2] = pyroOut3;
+      break;
     default:
       out3Enable = false;
       break;
@@ -420,16 +440,17 @@ void assignPyroOutputs()
       landingEvent_Enable = true;
       landingDelay = config.outPut4Delay;
       pinLanding[3] = pyroOut4;
-      break; 
+      break;
+    case 5:
+      liftOffEvent_Enable = true;
+      liftOffDelay = config.outPut4Delay;
+      pinLiftOff[3] = pyroOut4;
+      break;
     default:
       out4Enable = false;
       break;
   }
 
- /* for (int a =0 ; a<4 ; a++ ) {
-    SerialCom.println(pinMain[a]);
-    SerialCom.println(pinApogee[a]);
-  }*/
 }
 
 void setEventState(int pyroOut, boolean state)
@@ -467,7 +488,10 @@ void setEventState(int pyroOut, boolean state)
   }
 
 }
+/*
+   Send telemety so that we can plot the flight
 
+*/
 void SendTelemetry(long sampleTime, int freq) {
   char altiTelem[200] = "";
   char temp[10] = "";
@@ -553,7 +577,7 @@ void loop()
 
 int currentVelocity(int prevTime, int curTime, int prevAltitude, int curAltitude)
 {
-  int curSpeed = int (float(curAltitude - prevAltitude) / (float( curTime - prevTime)/1000));
+  int curSpeed = int (float(curAltitude - prevAltitude) / (float( curTime - prevTime) / 1000));
   return curSpeed;
 }
 
@@ -567,12 +591,13 @@ void recordAltitude()
   boolean apogeeReadyToFire = false;
   boolean mainReadyToFire = false;
   boolean landingReadyToFire = false;
+  boolean liftOffReadyToFire = false;
   unsigned long apogeeStartTime = 0;
   unsigned long mainStartTime = 0;
   unsigned long landingStartTime = 0;
-  //unsigned long liftoffStartTime=0;
+  unsigned long liftOffStartTime = 0;
   boolean ignoreAltiMeasure = false;
-  // boolean finishedEvent = false;
+
   boolean Event1Fired = false;
   boolean Event2Fired = false;
   boolean Event3Fired = false;
@@ -580,6 +605,9 @@ void recordAltitude()
 
   boolean MainFiredComplete = false;
   boolean LandingFiredComplete = false;
+  boolean LiftOffFiredComplete = false;
+  landingHasFired = false;
+  liftOffHasFired = false;
 
   if (out1Enable == false) Output1Fired = true;
   if (out2Enable == false) Output2Fired = true;
@@ -588,21 +616,12 @@ void recordAltitude()
 
 
 #ifdef SERIAL_DEBUG
-  if (pinMain == -1) SerialCom.println(F("Main disable\n"));
-  if (pinApogee == -1) SerialCom.println(F("Apogee disable\n"));
-  if (pinOut1 == -1) SerialCom.println(F("pinOut1 disable\n"));
-  if (pinOut2 == -1) SerialCom.println(F("pinOut2 disable\n"));
-  if (pinOut3 == -1) SerialCom.println(F("pinOut3 disable\n"));
-
-  if (pinOut4 == -1) SerialCom.println(F("pinOut4 disable\n"));
 
   SerialCom.println(F("Config delay:"));
   SerialCom.println(config.outPut1Delay);
   SerialCom.println(config.outPut2Delay);
   SerialCom.println(config.outPut3Delay);
-
   SerialCom.println(config.outPut4Delay);
-
 
   SerialCom.println(apogeeDelay);
   SerialCom.println(mainDelay);
@@ -631,47 +650,69 @@ void recordAltitude()
 #endif
 
       unsigned long prevTime = 0;
-      long prevAltitude= 0;
+      long prevAltitude = 0;
       // loop until we have reach an altitude of 3 meter
       //while(currAltitude > 3 && !MainFiredComplete && liftOff )
       while (liftOff)
       {
         unsigned long currentTime;
         unsigned long diffTime;
-        //unsigned long timerEvent1_startime;
 
         currAltitude = (ReadAltitude() - initialAltitude);
 
         currentTime = millis() - initialTime;
-        if(mainHasFired && !landingHasFired) {
-         /* SerialCom.print(currAltitude);
-          SerialCom.print(" ");
-          SerialCom.print(prevAltitude);
-          SerialCom.print(" ");
-          SerialCom.print(currentTime);
-          SerialCom.print(" ");
-          SerialCom.println(prevTime);
-          SerialCom.println(abs(currentVelocity(prevTime, currentTime, prevAltitude, currAltitude)));*/
-          if(abs(currentVelocity(prevTime, currentTime, prevAltitude, currAltitude))<1  ) {
+        if (mainHasFired && !landingHasFired) {
+
+          if (abs(currentVelocity(prevTime, currentTime, prevAltitude, currAltitude)) < 1  ) {
             //we have landed
             landingReadyToFire = true;
-            // Deploy main chute  X meters or feet  before landing...
-            SerialCom.println( "Landing !!!");
-           
+            landingStartTime = millis();
           }
         }
         prevAltitude = currAltitude;
         SendTelemetry(currentTime, 200);
         diffTime = currentTime - prevTime;
         prevTime = currentTime;
-        
+
+        if (!liftOffHasFired) {
+          liftOffReadyToFire = true;
+          liftOffStartTime = millis();
+        }
+
+
+        if (liftOffReadyToFire)
+        {
+          if ((millis() - liftOffStartTime) >= liftOffDelay)
+          {
+            //fire liftOff
+            for (int lo = 0; lo < 4; lo++ ) {
+              fireOutput(pinLiftOff[lo], true);
+            }
+
+            liftOffReadyToFire = false;
+            liftOffHasFired = true;
+            SendTelemetry(millis() - initialTime, 200);
+          }
+        }
+
+        if (liftOffHasFired)
+        {
+          if ((millis() - (liftOffStartTime + liftOffDelay)) >= 1000 && !LiftOffFiredComplete)
+          {
+            for (int lo = 0; lo < 4; lo++ ) {
+              if (config.servoStayOn == 0)
+                fireOutput(pinLiftOff[lo], false);
+              setEventState(pinLiftOff[lo], true);
+            }
+            LiftOffFiredComplete = true;
+          }
+        }
         if (timerEvent1_enable && !Event1Fired )
         {
           if (currentTime >= config.outPut1Delay)
           {
-            //fire output pyroOut1
+            //Trigger servo 1
             fireOutput(pyroOut1, true);
-            //timerEvent1_startime = currentTime;
             Event1Fired = true;
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("Fired 1st out"));
@@ -682,7 +723,7 @@ void recordAltitude()
         {
           if ((currentTime - config.outPut1Delay) >= 1000 && !Output1Fired )
           {
-            //switch off output pyroOut1
+            //switch off Servo 1
             if (config.servoStayOn == 0)
               fireOutput(pyroOut1, false);
             Output1Fired = true;
@@ -695,7 +736,7 @@ void recordAltitude()
         {
           if (currentTime >= config.outPut2Delay)
           {
-            //fire output pyroOut2
+            //Trigger Servo 2
             fireOutput(pyroOut2, true);
             Event2Fired = true;
 #ifdef SERIAL_DEBUG
@@ -707,7 +748,7 @@ void recordAltitude()
         {
           if ((currentTime - config.outPut2Delay) >= 1000 && !Output2Fired )
           {
-            //switch off output pyroOut2
+            //switch off servo 2
             if (config.servoStayOn == 0)
               fireOutput(pyroOut2, false);
             Output2Fired = true;
@@ -797,7 +838,7 @@ void recordAltitude()
           if ((millis() - apogeeStartTime) >= apogeeDelay)
           {
             //fire drogue
-            for (int ap =0; ap < 4 ; ap++) {
+            for (int ap = 0; ap < 4 ; ap++) {
               fireOutput(pinApogee[ap], true);
               setEventState(pinApogee[ap], true);
             }
@@ -813,10 +854,10 @@ void recordAltitude()
         if ((currAltitude  < mainDeployAltitude) && apogeeHasFired && !mainHasFired )
         {
           // Deploy main chute  X meters or feet  before landing...
-           for (int ap =0; ap < 4 ; ap++) {
-            if(config.servoStayOn == 0)
+          for (int ap = 0; ap < 4 ; ap++) {
+            if (config.servoStayOn == 0)
               fireOutput(pinApogee[ap], false);
-           }
+          }
 #ifdef SERIAL_DEBUG
           SerialCom.println(F("Apogee firing complete"));
 #endif
@@ -843,12 +884,11 @@ void recordAltitude()
 #ifdef SERIAL_DEBUG
             SerialCom.println(F("firing main"));
 #endif
-//SerialCom.println(F("firing main"));
-            for (int ma=0; ma < 4; ma++ ) {
+            for (int ma = 0; ma < 4; ma++ ) {
               fireOutput(pinMain[ma], true);
-             // SerialCom.println(pinMain[ma]);
+              // SerialCom.println(pinMain[ma]);
             }
-            
+
             mainReadyToFire = false;
             mainHasFired = true;
             SendTelemetry(millis() - initialTime, 200);
@@ -860,9 +900,9 @@ void recordAltitude()
 
           if ((millis() - (mainStartTime + mainDelay)) >= 1000 && !MainFiredComplete)
           {
-            for (int ma=0; ma < 4; ma++ ) {
-              // turn off servo 
-              if(config.servoStayOn == 0)
+            for (int ma = 0; ma < 4; ma++ ) {
+              // turn off main servo(s)
+              if (config.servoStayOn == 0)
                 fireOutput(pinMain[ma], false);
               setEventState(pinMain[ma], true);
             }
@@ -876,15 +916,13 @@ void recordAltitude()
 
         if (landingReadyToFire)
         {
-          if ((millis() - mainStartTime) >= mainDelay)
+          if ((millis() - landingStartTime) >= landingDelay)
           {
             //fire landing
-
-            for (int la=0; la < 4; la++ ) {
+            for (int la = 0; la < 4; la++ ) {
               fireOutput(pinLanding[la], true);
-            
             }
-            
+
             landingReadyToFire = false;
             landingHasFired = true;
             SendTelemetry(millis() - initialTime, 200);
@@ -895,9 +933,9 @@ void recordAltitude()
         {
           if ((millis() - (landingStartTime + landingDelay)) >= 1000 && !LandingFiredComplete)
           {
-            for (int la=0; la < 4; la++ ) {
-              // turn off servo 
-              if(config.servoStayOn == 0)
+            for (int la = 0; la < 4; la++ ) {
+              // turn off servo
+              if (config.servoStayOn == 0)
                 fireOutput(pinLanding[la], false);
               setEventState(pinLanding[la], true);
             }
@@ -1099,11 +1137,11 @@ void interpretCommandBuffer(char *commandbuffer) {
   //write altimeter config
   else if (commandbuffer[0] == 's')
   {
-    if (writeAltiConfig(commandbuffer)){
+    if (writeAltiConfig(commandbuffer)) {
       readAltiConfig();
       assignPyroOutputs();
       SerialCom.print(F("$OK;\n"));
-    }  
+    }
     else
       SerialCom.print(F("$KO;\n"));
   }
