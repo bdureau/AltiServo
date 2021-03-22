@@ -124,6 +124,25 @@ boolean Output4Fired = false;
 
 boolean telemetryEnable = false;
 
+boolean apogeeReadyToFire = false;
+  boolean mainReadyToFire = false;
+  boolean landingReadyToFire = false;
+  boolean liftOffReadyToFire = false;
+  unsigned long apogeeStartTime = 0;
+  unsigned long mainStartTime = 0;
+  unsigned long landingStartTime = 0;
+  unsigned long liftOffStartTime = 0;
+  boolean ignoreAltiMeasure = false;
+
+  boolean Event1Fired = false;
+  boolean Event2Fired = false;
+  boolean Event3Fired = false;
+  boolean Event4Fired = false;
+
+  boolean MainFiredComplete = false;
+  boolean LandingFiredComplete = false;
+  boolean LiftOffFiredComplete = false;
+
 Servo Servo1;   // First Servo off the chassis
 Servo Servo2;   // Second Servo off the chassis
 Servo Servo3;
@@ -163,6 +182,67 @@ double ReadAltitude()
   return A;
 }
 #endif
+
+/*
+
+   initAlti()
+
+*/
+void initAlti() {
+  // set main altitude (if in feet convert to metrics)
+  if (config.unit == 0)
+    FEET_IN_METER = 1;
+  else
+    FEET_IN_METER = 3.28084 ;
+
+  mainDeployAltitude = int(config.mainAltitude / FEET_IN_METER);
+  // beepFrequency
+  beepingFrequency = config.beepingFrequency;
+
+ apogeeReadyToFire = false;
+  mainReadyToFire = false;
+   landingReadyToFire = false;
+   liftOffReadyToFire = false;
+   apogeeStartTime = 0;
+   mainStartTime = 0;
+ landingStartTime = 0;
+   liftOffStartTime = 0;
+   ignoreAltiMeasure = false;
+
+   Event1Fired = false;
+   Event2Fired = false;
+   Event3Fired = false;
+   Event4Fired = false;
+
+   MainFiredComplete = false;
+   LandingFiredComplete = false;
+   LiftOffFiredComplete = false;
+  landingHasFired = false;
+  liftOffHasFired = false;
+  //our drogue has not been fired
+  apogeeHasFired = false;
+  mainHasFired = false;
+
+
+  assignPyroOutputs();
+
+  //SerialCom.print(F("Set outputs\n"));
+  //Initialise the output pin
+  Servo1.attach(pyroOut1);
+  Servo2.attach(pyroOut2);
+  Servo3.attach(pyroOut3);
+  Servo4.attach(pyroOut4);
+
+  //reset all servo pos
+  fireOutput(pyroOut1, false);
+  fireOutput(pyroOut2, false);
+  fireOutput(pyroOut3, false);
+  fireOutput(pyroOut4, false);
+ if (out1Enable == false) Output1Fired = true;
+  if (out2Enable == false) Output2Fired = true;
+  if (out3Enable == false) Output3Fired = true;
+  if (out4Enable == false) Output4Fired = true;
+}
 //================================================================
 // Start program
 //================================================================
@@ -188,16 +268,9 @@ void setup()
     config.connectionSpeed = 38400;
     writeConfigStruc();
   }
+  SerialCom.print(F("Start program\n"));
+  initAlti();
 
-  // set main altitude (if in feet convert to metrics)
-  if (config.unit == 0)
-    FEET_IN_METER = 1;
-  else
-    FEET_IN_METER = 3.28084 ;
-
-  mainDeployAltitude = int(config.mainAltitude / FEET_IN_METER);
-  // beepFrequency
-  beepingFrequency = config.beepingFrequency;
 
   // init Kalman filter
   KalmanInit();
@@ -222,25 +295,7 @@ void setup()
   bmp.begin();
   bmp.setOversampling(config.altimeterResolution)
 #endif
-  //our drogue has not been fired
-  apogeeHasFired = false;
-  mainHasFired = false;
 
-  SerialCom.print(F("Start program\n"));
-  assignPyroOutputs();
-
-  //SerialCom.print(F("Set outputs\n"));
-  //Initialise the output pin
-  Servo1.attach(pyroOut1);
-  Servo2.attach(pyroOut2);
-  Servo3.attach(pyroOut3);
-  Servo4.attach(pyroOut4);
-
-  //reset all servo pos
-  fireOutput(pyroOut1, false);
-  fireOutput(pyroOut2, false);
-  fireOutput(pyroOut3, false);
-  fireOutput(pyroOut4, false);
 
   pinMode(pinSpeaker, OUTPUT);
 
@@ -311,6 +366,23 @@ void setup()
 */
 void assignPyroOutputs()
 {
+  timerEvent1_enable = false;
+  timerEvent2_enable = false;
+  timerEvent3_enable = false;
+  out1Delay = 0;
+  out2Delay = 0;
+  out3Delay = 0;
+  timerEvent4_enable = false;
+  out4Delay = 0;
+
+  landingDelay = 0;
+  liftOffDelay = 0;
+  apogeeDelay = 0;
+  mainDelay = 0;
+  mainEvent_Enable = false;
+  apogeeEvent_Enable = false;
+  landingEvent_Enable = false;
+  liftOffEvent_Enable = false;
 
   for (int a = 0 ; a < 4 ; a++ ) {
     pinMain[a] = -1;
@@ -588,26 +660,28 @@ int currentVelocity(int prevTime, int curTime, int prevAltitude, int curAltitude
 void recordAltitude()
 {
   boolean exitLoop = false;
-  boolean apogeeReadyToFire = false;
-  boolean mainReadyToFire = false;
-  boolean landingReadyToFire = false;
-  boolean liftOffReadyToFire = false;
-  unsigned long apogeeStartTime = 0;
-  unsigned long mainStartTime = 0;
-  unsigned long landingStartTime = 0;
-  unsigned long liftOffStartTime = 0;
-  boolean ignoreAltiMeasure = false;
+  apogeeReadyToFire = false;
+  mainReadyToFire = false;
+  landingReadyToFire = false;
+  liftOffReadyToFire = false;
+  apogeeStartTime = 0;
+  mainStartTime = 0;
+  landingStartTime = 0;
+  liftOffStartTime = 0;
+  ignoreAltiMeasure = false;
 
-  boolean Event1Fired = false;
-  boolean Event2Fired = false;
-  boolean Event3Fired = false;
-  boolean Event4Fired = false;
+  Event1Fired = false;
+  Event2Fired = false;
+  Event3Fired = false;
+  Event4Fired = false;
 
-  boolean MainFiredComplete = false;
-  boolean LandingFiredComplete = false;
-  boolean LiftOffFiredComplete = false;
+  MainFiredComplete = false;
+  LandingFiredComplete = false;
+  LiftOffFiredComplete = false;
   landingHasFired = false;
   liftOffHasFired = false;
+  mainHasFired = false;
+  apogeeHasFired = false;
 
   if (out1Enable == false) Output1Fired = true;
   if (out2Enable == false) Output2Fired = true;
@@ -661,7 +735,7 @@ void recordAltitude()
         currAltitude = (ReadAltitude() - initialAltitude);
 
         currentTime = millis() - initialTime;
-        if (mainHasFired && !landingHasFired) {
+        if (mainHasFired && !landingHasFired && !landingReadyToFire) {
 
           if (abs(currentVelocity(prevTime, currentTime, prevAltitude, currAltitude)) < 1  ) {
             //we have landed
