@@ -2,25 +2,12 @@
 
 //pyro out 1
 const int pyroOut1 = 9;
-int pinApogee[] = {-1, -1, -1, -1};
-
 //pyro out 2
 const int pyroOut2= 10;
-int pinMain[] = {-1, -1, -1, -1};
-
 //pyro out 3
 const int pyroOut3= 5;
-int pinOut3 = 5;
-//pinLanding
-int pinLanding[]= {-1, -1, -1, -1};
-//PinLiftOff
-int pinLiftOff[]= {-1, -1, -1, -1};
 //pyro out 4
 const int pyroOut4=6; 
-int pinOut4 = 6;
-
-int pinOut2 =-1;
-int pinOut1 =-1;
 
 ConfigStruct config;
 //================================================================

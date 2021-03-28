@@ -33,18 +33,12 @@
 //////////// do not change anything after unless you know what you are doing /////////////////////
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 2
+#define MINOR_VERSION 3
 #define CONFIG_START 32
-
-
-
 
 #define BOARD_FIRMWARE "AltiServo"
 
 #define SerialCom Serial
-
-
-
 
 #include "Arduino.h"
 //used for writing in the microcontroler internal eeprom
@@ -54,28 +48,12 @@
 
 //pyro out 1
 extern const int pyroOut1;
-//pin apogee
-extern int pinApogee[];
 //pyro out 2
 extern const int pyroOut2;
-//pinMain
-extern int pinMain[];
 //pyro out 3
 extern const int pyroOut3;
-extern int pinOut3;
-//pinLanding
-extern int pinLanding[];
-//pinLiftOff
-extern int pinLiftOff[];
 //pyro out 4
 extern const int pyroOut4;
-extern int pinOut4;
-
-
-extern int pinOut2;
-extern int pinOut1;
-
-//extern int continuityPins[4];
 
 struct ConfigStruct {
   int unit;             //0 = meter 1 = feet
