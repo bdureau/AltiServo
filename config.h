@@ -1,15 +1,15 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 /*
- * 
- * This is where you should do all the configuration
- * 
- * First you need to make sure that you have all the require Arduino libraries to compile it
- * 
- * required libraries:
- * Adafruit_BMP085 or BMP280 or BMP085_stm32
- * avdweb_VirtualDelay
- */
+
+   This is where you should do all the configuration
+
+   First you need to make sure that you have all the require Arduino libraries to compile it
+
+   required libraries:
+   Adafruit_BMP085 or BMP280 or BMP085_stm32
+   avdweb_VirtualDelay
+*/
 
 
 
@@ -17,11 +17,11 @@
 
 
 // choose the pressure sensor that you are using
-// for most board the pressure sensor is either BMP085 or BMP180 
+// for most board the pressure sensor is either BMP085 or BMP180
 // note that BMP085 and 180 are compatible no need to use the new BMP180 library
 #define BMP085_180
 
-// if you have a custom ATMega 328 board using a BMP280 pressure sensor 
+// if you have a custom ATMega 328 board using a BMP280 pressure sensor
 //#define BMP280
 
 // If you want to have additionnal debugging uncomment it
@@ -33,7 +33,7 @@
 //////////// do not change anything after unless you know what you are doing /////////////////////
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 3
+#define MINOR_VERSION 4
 #define CONFIG_START 32
 
 #define BOARD_FIRMWARE "AltiServo"
@@ -43,8 +43,6 @@
 #include "Arduino.h"
 //used for writing in the microcontroler internal eeprom
 #include <EEPROM.h>
-
-#include "avdweb_VirtualDelay.h"
 
 //pyro out 1
 extern const int pyroOut1;
@@ -77,8 +75,12 @@ struct ConfigStruct {
   int noContinuity;
   int outPut4;
   int outPut4Delay;
-  int liftOffAltitude; //Lift Altitude in meters
+  int liftOffAltitude; //Lift off Altitude in meters
   int batteryType; // 0= Unknown, 1= "2S (7.4 Volts)", 2 = "9 Volts",3 = "3S (11.1 Volts)
+  int recordingTimeout; // in Seconds for compatibility with other altimeters
+  int reserved1;// for future use
+  int reserved2;// for future use
+  int reserved3;// for future use
   int servo1OnPos;
   int servo2OnPos;
   int servo3OnPos;
@@ -88,15 +90,16 @@ struct ConfigStruct {
   int servo3OffPos;
   int servo4OffPos;
   int servoStayOn;
-  
-  int cksum;  
+
+  int cksum;
 };
 extern ConfigStruct config;
 
 extern void defaultConfig();
 extern boolean readAltiConfig();
 extern int getOutPin(int );
-extern bool writeAltiConfig( char * );
+//extern bool writeAltiConfig( char * );
+extern bool writeAltiConfigV2( char * );
 extern void printAltiConfig();
 extern void writeConfigStruc();
 extern bool CheckValideBaudRate(long);

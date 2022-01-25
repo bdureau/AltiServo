@@ -1,5 +1,5 @@
 /*
-  Rocket Servo altimeter ver 1.3
+  Rocket Servo altimeter ver 1.4
   Copyright Boris du Reau 2012-2021
 
   The following is board for triggering servo's on event during a rocket flight.
@@ -26,6 +26,9 @@
   added landing and lift off events
   Major changes on version 1.3
   Optimise the code so that it uses less global variables
+  Major changes on version 1.4
+  Changes to the config
+  Chnage to the sensor lib
 */
 #include <Servo.h>
 //altimeter configuration lib
@@ -34,7 +37,8 @@
 
 
 #ifdef BMP085_180
-#include <Adafruit_BMP085.h>
+//#include <Adafruit_BMP085.h>
+#include "Bear_BMP085.h"
 #endif
 
 #ifdef BMP280
@@ -53,7 +57,7 @@
 int mode = 0; //0 = read; 1 = write;
 
 #ifdef BMP085_180
-Adafruit_BMP085 bmp;
+BMP085 bmp;
 #endif
 #ifdef BMP280
 BMP280 bmp;
@@ -87,7 +91,7 @@ boolean softConfigValid = false;
 
 //#define NBR_MEASURE_APOGEE 5
 float FEET_IN_METER = 1;
-boolean canRecord = true;
+//boolean canRecord = true;
 
 boolean Output1Fired = false;
 boolean Output2Fired = false;
@@ -102,6 +106,7 @@ boolean allMainFiredComplete = false;
 boolean allTimerFiredComplete = false;
 boolean allLiftOffFiredComplete = false;
 boolean allLandingFiredComplete = false;
+boolean allAltitudeFiredComplete = false;
 
 Servo Servo1;   // First Servo off the chassis
 Servo Servo2;   // Second Servo off the chassis
@@ -157,16 +162,18 @@ void initAlti() {
   // beepFrequency
   beepingFrequency = config.beepingFrequency;
 
- 
+
   allApogeeFiredComplete = false;
   allMainFiredComplete = false;
   allTimerFiredComplete = false;
   allLiftOffFiredComplete = false;
   allLandingFiredComplete = false;
+  allAltitudeFiredComplete = false;
+
   liftOff = false;
   apogeeAltitude = 0;
   mainAltitude = 0;
-  
+
   //Initialise the output pin
   Servo1.attach(pyroOut1);
   Servo2.attach(pyroOut2);
@@ -178,7 +185,7 @@ void initAlti() {
   fireOutput(pyroOut2, false);
   fireOutput(pyroOut3, false);
   fireOutput(pyroOut4, false);
- 
+
   Output1Fired = false;
   Output2Fired = false;
   Output3Fired = false;
@@ -224,9 +231,11 @@ void setup()
   //You can change the baud rate here
   //and change it to 57600, 115200 etc..
   //Serial.begin(BAUD_RATE);
+  config.connectionSpeed = 38400;
   SerialCom.begin(config.connectionSpeed);
   //software pull up so that all bluetooth modules work!!! took me a good day to figure it out
   pinMode(PD0, INPUT_PULLUP);
+  // pinMode(PD1, INPUT_PULLUP);
   //Presure Sensor Initialisation
 #ifdef BMP085_180
   // Note that BMP180 is compatible with the BMP085 library
@@ -302,9 +311,9 @@ void setup()
 
 }
 /*
- * setEventState
- * 
- */
+   setEventState
+
+*/
 
 void setEventState(int pyroOut, boolean state)
 {
@@ -342,7 +351,7 @@ void setEventState(int pyroOut, boolean state)
 
 }
 /*
- * SendTelemetry(long sampleTime, int freq)
+   SendTelemetry(long sampleTime, int freq)
    Send telemety so that we can plot the flight
 
 */
@@ -451,6 +460,7 @@ void recordAltitude()
   unsigned long landingStartTime = 0;
   unsigned long liftOffStartTime = 0;
   boolean ignoreAltiMeasure = false;
+  unsigned long altitudeStartTime[] = {0, 0, 0, 0};
 
   boolean liftOffHasFired = false;
   //hold the state of all our outputs
@@ -478,7 +488,7 @@ void recordAltitude()
     OutputPins[2] = pyroOut3;
   if (config.outPut4 != 3)
     OutputPins[3] = pyroOut4;
- 
+
 
   if (config.outPut1 == 3) Output1Fired = true;
   if (config.outPut2 == 3) Output2Fired = true;
@@ -580,7 +590,39 @@ void recordAltitude()
           SendTelemetry(millis() - initialTime, 200);
         }
 
- 
+        //altitude events
+        if (!allAltitudeFiredComplete) {
+          //fire all altitude that are ready
+          for (int al = 0; al < 4; al++ ) {
+            if (!outputHasFired[al] && ((currAltitude >= OutputDelay[al]) ) && OutputType[al] == 6) {
+              // digitalWrite(OutputPins[al], HIGH);
+              fireOutput(OutputPins[al], true);
+              outputHasFired[al] = true;
+              altitudeStartTime[al] = millis();
+            }
+          }
+          for (int al = 0; al < 4; al++ ) {
+            if (( millis()  >= (1000 + altitudeStartTime[al]))  && !OutputFiredComplete[al] && OutputType[al] == 6 && outputHasFired[al])
+            {
+              //digitalWrite(OutputPins[al], LOW);
+              //switch off output pyroOut4
+              if (config.servoStayOn == 0)
+                fireOutput(OutputPins[al], false);
+              setEventState(OutputPins[al], true);
+              OutputFiredComplete[al] = true;
+            }
+          }
+
+          allAltitudeFiredComplete = true;
+
+          for (int al = 0; al < 4; al++ ) {
+            if (!OutputFiredComplete[al] && OutputType[al] == 6)
+            {
+              allAltitudeFiredComplete = false;
+            }
+          }
+          SendTelemetry(millis() - initialTime, 200);
+        }
         if (!allTimerFiredComplete) {
           //fire all timers that are ready
           for (int ti = 0; ti < 4; ti++ ) {
@@ -595,7 +637,7 @@ void recordAltitude()
               //switch off output pyroOut4
               if (config.servoStayOn == 0)
                 fireOutput(OutputPins[ti], false);
-                
+
               setEventState(OutputPins[ti], true);
               OutputFiredComplete[ti] = true;
             }
@@ -734,7 +776,7 @@ void recordAltitude()
               // turn off servo
               if (config.servoStayOn == 0)
                 fireOutput(OutputPins[la], false);
-             
+
               setEventState(OutputPins[la], true);
               OutputFiredComplete[la] = true;
             }
@@ -895,39 +937,8 @@ void MainMenu()
 void interpretCommandBuffer(char *commandbuffer) {
   SerialCom.println((char*)commandbuffer);
 
-  //this will erase all flight
-  if (commandbuffer[0] == 'e')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
-  //this will read one flight
-  else if (commandbuffer[0] == 'r')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
-  //start or stop recording
-  else if (commandbuffer[0] == 'w')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
-  //Number of flight
-  else if (commandbuffer[0] == 'n')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
-  //list all flights
-  else if (commandbuffer[0] == 'l')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
-
-  //toggle continuity on and off
-  else if (commandbuffer[0] == 'c')
-  {
-    SerialCom.println(F("Not implemented \n"));
-  }
   //get all flight data
-  else if (commandbuffer[0] == 'a')
+  if (commandbuffer[0] == 'a')
   {
     SerialCom.println(F("Not implemented \n"));
   }
@@ -940,17 +951,10 @@ void interpretCommandBuffer(char *commandbuffer) {
 
     SerialCom.print(F("$end;\n"));
   }
-  //write altimeter config
-  else if (commandbuffer[0] == 's')
+  //toggle continuity on and off
+  else if (commandbuffer[0] == 'c')
   {
-    if (writeAltiConfig(commandbuffer)) {
-      readAltiConfig();
-      //assignPyroOutputs();
-      initAlti();
-      SerialCom.print(F("$OK;\n"));
-    }
-    else
-      SerialCom.print(F("$KO;\n"));
+    SerialCom.println(F("Not implemented \n"));
   }
   //reset alti config
   else if (commandbuffer[0] == 'd')
@@ -961,16 +965,27 @@ void interpretCommandBuffer(char *commandbuffer) {
     //assignPyroOutputs();
     initAlti() ;
   }
-  //hello
-  else if (commandbuffer[0] == 'h')
+  //this will erase all flight
+  else if (commandbuffer[0] == 'e')
   {
-    //FastReading = false;
-    SerialCom.print(F("$OK;\n"));
+    SerialCom.println(F("Not implemented \n"));
   }
   //FastReading
   else if (commandbuffer[0] == 'f')
   {
     FastReading = true;
+    SerialCom.print(F("$OK;\n"));
+  }
+  //FastReading off
+  else if (commandbuffer[0] == 'g')
+  {
+    FastReading = false;
+    SerialCom.print(F("$OK;\n"));
+  }
+  //hello
+  else if (commandbuffer[0] == 'h')
+  {
+    //FastReading = false;
     SerialCom.print(F("$OK;\n"));
   }
   //turn on or off the selected output
@@ -1003,18 +1018,10 @@ void interpretCommandBuffer(char *commandbuffer) {
       }
     }
   }
-  //telemetry on/off
-  else if (commandbuffer[0] == 'y')
+  //list all flights
+  else if (commandbuffer[0] == 'l')
   {
-    if (commandbuffer[1] == '1') {
-      SerialCom.print(F("Telemetry enabled\n"));
-      telemetryEnable = true;
-    }
-    else {
-      SerialCom.print(F("Telemetry disabled\n"));
-      telemetryEnable = false;
-    }
-    SerialCom.print(F("$OK;\n"));
+    SerialCom.println(F("Not implemented \n"));
   }
   //mainloop on/off
   else if (commandbuffer[0] == 'm')
@@ -1035,12 +1042,74 @@ void interpretCommandBuffer(char *commandbuffer) {
     }
     SerialCom.print(F("$OK;\n"));
   }
-  //FastReading off
-  else if (commandbuffer[0] == 'g')
+  //Number of flight
+  else if (commandbuffer[0] == 'n')
   {
-    FastReading = false;
+    SerialCom.println(F("Not implemented \n"));
+  }
+  // send test tram
+  else if (commandbuffer[0] == 'o')
+  {
+    SerialCom.print(F("$start;\n"));
+    sendTestTram();
+    SerialCom.print(F("$end;\n"));
+  }
+  //altimeter config param
+  //write  config
+  else if (commandbuffer[0] == 'p')
+  {
+    if (writeAltiConfigV2(commandbuffer)) {
+      SerialCom.print(F("$OK;\n"));
+    }
+    else
+      SerialCom.print(F("$KO;\n"));
+  }
+  else if (commandbuffer[0] == 'q')
+  {
+    writeConfigStruc();
+    readAltiConfig();
+    initAlti();
     SerialCom.print(F("$OK;\n"));
   }
+  //this will read one flight
+  else if (commandbuffer[0] == 'r')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //write altimeter config
+  else if (commandbuffer[0] == 's')
+  {
+    /*if (writeAltiConfig(commandbuffer)) {
+      readAltiConfig();
+      //assignPyroOutputs();
+      initAlti();
+      SerialCom.print(F("$OK;\n"));
+      }
+      else
+      SerialCom.print(F("$KO;\n"));*/
+    SerialCom.println(F("Not implemented \n"));
+  }
+  //start or stop recording
+  else if (commandbuffer[0] == 'w')
+  {
+    SerialCom.println(F("Not implemented \n"));
+  }
+
+
+  //telemetry on/off
+  else if (commandbuffer[0] == 'y')
+  {
+    if (commandbuffer[1] == '1') {
+      SerialCom.print(F("Telemetry enabled\n"));
+      telemetryEnable = true;
+    }
+    else {
+      SerialCom.print(F("Telemetry disabled\n"));
+      telemetryEnable = false;
+    }
+    SerialCom.print(F("$OK;\n"));
+  }
+
 
   else if (commandbuffer[0] == 't')
   {
@@ -1053,6 +1122,7 @@ void interpretCommandBuffer(char *commandbuffer) {
   {
     //exit continuity mode
   }
+
   else if (commandbuffer[0] == ' ')
   {
     SerialCom.print(F("$K0;\n"));
@@ -1114,4 +1184,24 @@ void fireOutput(int pin, boolean On) {
       angle = config.servo4OffPos;
     Servo4.write(angle);
   }
+}
+
+/*
+    Test tram
+*/
+void sendTestTram() {
+
+  char altiTest[100] = "";
+  char temp[10] = "";
+
+  strcat(altiTest, "testTrame," );
+  strcat(altiTest, "Bear altimeters are the best!!!!,");
+  unsigned int chk;
+  chk = msgChk(altiTest, sizeof(altiTest));
+  sprintf(temp, "%i", chk);
+  strcat(altiTest, temp);
+  strcat(altiTest, ";\n");
+  SerialCom.print("$");
+  SerialCom.print(altiTest);
+
 }

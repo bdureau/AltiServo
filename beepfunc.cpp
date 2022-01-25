@@ -13,8 +13,6 @@ const int pinSpeaker = 13;
 
 
 int beepingFrequency;
-
-VirtualDelay delay1, delay2, delay3;
 int lastPin = -1;
 int currentPinPos = 0;
 int currentPin = -1;
