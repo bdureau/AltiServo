@@ -1,6 +1,6 @@
 /*
-  Rocket Servo altimeter ver 1.4
-  Copyright Boris du Reau 2012-2021
+  Rocket Servo altimeter ver 1.5
+  Copyright Boris du Reau 2012-2022
 
   The following is board for triggering servo's on event during a rocket flight.
 
@@ -28,7 +28,10 @@
   Optimise the code so that it uses less global variables
   Major changes on version 1.4
   Changes to the config
-  Chnage to the sensor lib
+  Change to the sensor lib
+  Major changes on version 1.5
+  Compatibility with latest console app
+  
 */
 #include <Servo.h>
 //altimeter configuration lib
@@ -1155,34 +1158,51 @@ void resetFlight() {
 void fireOutput(int pin, boolean On) {
 
   int angle;
-  if (pyroOut1 == pin) {
+  if (config.servoOnOff == 0) {
+    if (pyroOut1 == pin) {
+      if (On)
+        angle = config.servo1OnPos;
+      else
+        angle = config.servo1OffPos;
+      Servo1.write(angle);
+    }
+    else if (pyroOut2 == pin) {
+      if (On)
+        angle = config.servo2OnPos;
+      else
+        angle = config.servo2OffPos;
+      Servo2.write(angle);
+    }
+    else if (pyroOut3 == pin) {
+      if (On)
+        angle = config.servo3OnPos;
+      else
+        angle = config.servo3OffPos;
+      Servo3.write(angle);
+    }
+    else if (pyroOut4 == pin) {
+      if (On)
+        angle = config.servo4OnPos;
+      else
+        angle = config.servo4OffPos;
+      Servo4.write(angle);
+    }
+  }
+  else {
+    if (On)
+      angle = 1000;
+    else
+      angle = 2000;
 
-    if (On)
-      angle = config.servo1OnPos;
-    else
-      angle = config.servo1OffPos;
-    Servo1.write(angle);
-  }
-  else if (pyroOut2 == pin) {
-    if (On)
-      angle = config.servo2OnPos;
-    else
-      angle = config.servo2OffPos;
-    Servo2.write(angle);
-  }
-  else if (pyroOut3 == pin) {
-    if (On)
-      angle = config.servo3OnPos;
-    else
-      angle = config.servo3OffPos;
-    Servo3.write(angle);
-  }
-  else if (pyroOut4 == pin) {
-    if (On)
-      angle = config.servo4OnPos;
-    else
-      angle = config.servo4OffPos;
-    Servo4.write(angle);
+    if (pyroOut1 == pin) {
+      Servo1.writeMicroseconds(angle);
+    } else if (pyroOut2 == pin) {
+      Servo2.writeMicroseconds(angle);
+    } else if (pyroOut3 == pin) {
+      Servo3.writeMicroseconds(angle);
+    } else if (pyroOut4 == pin) {
+      Servo4.writeMicroseconds(angle);
+    }
   }
 }
 

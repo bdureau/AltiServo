@@ -42,7 +42,7 @@ void defaultConfig()
   config.recordingTimeout = 120;
   config.reserved1 = 0;
   config.reserved2 = 0;
-  config.reserved3 = 0;
+  config.servoOnOff = 0;
   config.servo1OnPos = 60;
   config.servo2OnPos = 60;
   config.servo3OnPos = 60;
@@ -73,181 +73,7 @@ boolean readAltiConfig() {
   write the config received by the console
 
 */
-/*bool writeAltiConfig( char *p ) {
 
-  char *str;
-  int i = 0;
-  int strChk = 0;
-  char msg[100] = "";
-
-  while ((str = strtok_r(p, ",", &p)) != NULL) // delimiter is the comma
-  {
-    switch (i)
-    {
-      case 1:
-        config.unit = atoi(str);
-        strcat(msg, str);
-        break;
-      case 2:
-        config.beepingMode = atoi(str);
-        strcat(msg, str);
-        break;
-      case 3:
-        config.outPut1 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 4:
-        config.outPut2 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 5:
-        config.outPut3 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 6:
-        config.mainAltitude = atoi(str);
-        strcat(msg, str);
-        break;
-      case 7:
-        config.superSonicYesNo = atoi(str);
-        strcat(msg, str);
-        break;
-      case 8:
-        config.outPut1Delay = atol(str);
-        strcat(msg, str);
-        break;
-      case 9:
-        config.outPut2Delay = atol(str);
-        strcat(msg, str);
-        break;
-      case 10:
-        config.outPut3Delay = atol(str);
-        strcat(msg, str);
-        break;
-      case 11:
-        config.beepingFrequency = atoi(str);
-        strcat(msg, str);
-        break;
-      case 12:
-        config.nbrOfMeasuresForApogee = atoi(str);
-        strcat(msg, str);
-        break;
-      case 13:
-        config.endRecordAltitude = atol(str);
-        strcat(msg, str);
-        break;
-      case 14:
-        config.recordTemperature = atoi(str);
-        strcat(msg, str);
-        break;
-      case 15:
-        config.superSonicDelay = atoi(str);
-        strcat(msg, str);
-        break;
-      case 16:
-        config.connectionSpeed = atol(str);
-        strcat(msg, str);
-        break;
-      case 17:
-        config.altimeterResolution = atoi(str);
-        strcat(msg, str);
-        break;
-      case 18:
-        config.eepromSize = atoi(str);
-        strcat(msg, str);
-        break;
-      case 19:
-        config.noContinuity = atoi(str);
-        strcat(msg, str);
-        break;
-      case 20:
-        config.outPut4 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 21:
-        config.outPut4Delay = atol(str);
-        strcat(msg, str);
-        break;
-      case 22:
-        config.liftOffAltitude = atoi(str);
-        strcat(msg, str);
-        break;
-      case 23:
-        config.batteryType = atoi(str);
-        strcat(msg, str);
-        break;
-      case 24:
-        config.recordingTimeout = atoi(str);
-        strcat(msg, str);
-        break;
-      case 25:
-        config.reserved1 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 26:
-        config.reserved2 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 27:
-        config.reserved3 = atoi(str);
-        strcat(msg, str);
-        break;
-      case 28:
-        config.servo1OnPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 29:
-        config.servo2OnPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 30:
-        config.servo3OnPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 31:
-        config.servo4OnPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 32:
-        config.servo1OffPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 33:
-        config.servo2OffPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 34:
-        config.servo3OffPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 35:
-        config.servo4OffPos = atoi(str);
-        strcat(msg, str);
-        break;
-      case 36:
-        config.servoStayOn = atoi(str);
-        strcat(msg, str);
-        break;
-      case 37:
-        //our checksum
-        strChk = atoi(str);
-        break;
-    }
-    i++;
-
-  }
-
-  //we have a partial config
-  if (i < 36)
-    return false;
-  if (msgChk(msg, sizeof(msg)) != strChk)
-    return false;
-  config.cksum = CheckSumConf(config);
-
-
-  writeConfigStruc();
-  return true;
-  }*/
 
 bool writeAltiConfigV2( char *p ) {
 
@@ -363,7 +189,7 @@ bool writeAltiConfigV2( char *p ) {
       config.reserved2 = (int) commandVal;
       break;
     case 27:
-      config.reserved3 = (int) commandVal;
+      config.servoOnOff = (int) commandVal;
       break;
     case 28:
       config.servo1OnPos = (int) commandVal;
@@ -497,7 +323,7 @@ void printAltiConfig()
   strcat(altiConfig, temp);
   sprintf(temp, "%i,", config.reserved2);// for future use
   strcat(altiConfig, temp);
-  sprintf(temp, "%i,", config.reserved3);// for future use
+  sprintf(temp, "%i,", config.servoOnOff);// use servo has a switch
   strcat(altiConfig, temp);
   //servo1OnPos
   sprintf(temp, "%i,", config.servo1OnPos);

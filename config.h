@@ -33,7 +33,7 @@
 //////////// do not change anything after unless you know what you are doing /////////////////////
 
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 4
+#define MINOR_VERSION 5
 #define CONFIG_START 32
 
 #define BOARD_FIRMWARE "AltiServo"
@@ -80,7 +80,7 @@ struct ConfigStruct {
   int recordingTimeout; // in Seconds for compatibility with other altimeters
   int reserved1;// for future use
   int reserved2;// for future use
-  int reserved3;// for future use
+  int servoOnOff;// 0 use angle 1 servo is on or off
   int servo1OnPos;
   int servo2OnPos;
   int servo3OnPos;
@@ -90,7 +90,6 @@ struct ConfigStruct {
   int servo3OffPos;
   int servo4OffPos;
   int servoStayOn;
-
   int cksum;
 };
 extern ConfigStruct config;
