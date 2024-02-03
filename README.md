@@ -1,4 +1,4 @@
-# AltiServo
+# AltiServo (firmware)
 This is a rocket Altimeter that can trigger 4 servo's rather than pyro output. The purpose of this altimeter is to do either booster ejection (ie: a Soyuz rocket has 4 boosters) or use it in a water rocket.
 This uses a BMP180 barometric sensor and can be configured with an Android device running the BearConsole application. 
 You can trigger booster based on altitude, apogee or on timing events.
